@@ -34,8 +34,8 @@ import {
   X,
   Zap
 } from 'lucide-react';
-import { supabase } from './supabase';
 
+import { supabase } from './supabase';
 
 /* =========================================================
    HELPERS
@@ -48,12 +48,19 @@ const money = n =>
     maximumFractionDigits: 0
   }).format(Number(n || 0));
 
-const dateText = v =>
-  new Date(`${v}T00:00:00`).toLocaleDateString('en-IN', {
+const dateText = v => {
+  if (!v) return '—';
+
+  const d = new Date(`${v}T00:00:00`);
+
+  if (Number.isNaN(d.getTime())) return '—';
+
+  return d.toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
   });
+};
 
 const sumBy = (a, f) => {
   const m = {};
@@ -65,7 +72,6 @@ const sumBy = (a, f) => {
 
   return Object.entries(m).sort((a, b) => b[1] - a[1]);
 };
-
 
 /* =========================================================
    CATEGORY ICONS
@@ -176,7 +182,8 @@ function categoryIconComponent(category) {
 
 function CategoryIcon({ category, size = 16 }) {
   const Icon = categoryIconComponent(category);
-  const accent = categoryAccentMap[categoryKey(category)] || 'blue';
+  const accent =
+    categoryAccentMap[categoryKey(category)] || 'blue';
 
   return (
     <span
@@ -192,15 +199,33 @@ function categoryLabel(category) {
   return String(category?.name || 'Other');
 }
 
+/* =========================================================
+   LOCAL STORAGE HELPERS
+========================================================= */
+
+const OWNER_KEY = 'dreamhome_owner';
+const CREDENTIALS_KEY = 'dreamhome_credentials';
+
+function getStoredOwner() {
+  return localStorage.getItem(OWNER_KEY) === 'true';
+}
+
+function getStoredCredentials() {
+  try {
+    return JSON.parse(
+      localStorage.getItem(CREDENTIALS_KEY) || 'null'
+    );
+  } catch {
+    return null;
+  }
+}
 
 /* =========================================================
    APP
 ========================================================= */
 
 export default function App() {
-  const [owner, setOwner] = useState(
-    () => sessionStorage.getItem('dreamhome_owner') === 'true'
-  );
+  const [owner, setOwner] = useState(getStoredOwner);
 
   const [setup, setSetup] = useState(null);
   const [boot, setBoot] = useState(true);
@@ -212,10 +237,16 @@ export default function App() {
       setInstallPrompt(e);
     };
 
-    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener(
+      'beforeinstallprompt',
+      handler
+    );
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handler
+      );
     };
   }, []);
 
@@ -223,21 +254,75 @@ export default function App() {
     if (!installPrompt) return;
 
     installPrompt.prompt();
-    await installPrompt.userChoice;
+
+    try {
+      await installPrompt.userChoice;
+    } catch {
+      // Ignore install prompt errors.
+    }
+
     setInstallPrompt(null);
   }
 
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from('app_settings')
-        .select('owner_username')
-        .eq('id', true)
-        .single();
+    let active = true;
 
-      setSetup(!error && !!data?.owner_username);
-      setBoot(false);
-    })();
+    async function checkSetup() {
+      try {
+        const { data, error } = await supabase
+          .from('app_settings')
+          .select('owner_username')
+          .eq('id', true)
+          .single();
+
+        if (!active) return;
+
+        setSetup(!error && !!data?.owner_username);
+      } catch {
+        if (active) {
+          setSetup(false);
+        }
+      } finally {
+        if (active) {
+          setBoot(false);
+        }
+      }
+    }
+
+    checkSetup();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  /* Re-check local login when app becomes visible again. */
+  useEffect(() => {
+    const checkLocalLogin = () => {
+      setOwner(getStoredOwner());
+    };
+
+    window.addEventListener(
+      'focus',
+      checkLocalLogin
+    );
+
+    document.addEventListener(
+      'visibilitychange',
+      checkLocalLogin
+    );
+
+    return () => {
+      window.removeEventListener(
+        'focus',
+        checkLocalLogin
+      );
+
+      document.removeEventListener(
+        'visibilitychange',
+        checkLocalLogin
+      );
+    };
   }, []);
 
   if (boot) {
@@ -248,8 +333,12 @@ export default function App() {
             src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
             alt="Dream Home"
           />
+
           <b>Dream Home</b>
-          <span>Family Expense Tracker</span>
+
+          <span>
+            Family Expense Tracker
+          </span>
         </div>
       </div>
     );
@@ -259,13 +348,18 @@ export default function App() {
     <Dashboard
       owner={owner}
       setup={setup}
-      setOwner={v => {
-        setOwner(v);
+      setOwner={value => {
+        setOwner(value);
 
-        if (v) {
-          sessionStorage.setItem('dreamhome_owner', 'true');
+        if (value) {
+          localStorage.setItem(
+            OWNER_KEY,
+            'true'
+          );
         } else {
-          sessionStorage.removeItem('dreamhome_owner');
+          localStorage.removeItem(
+            OWNER_KEY
+          );
         }
       }}
       installPrompt={installPrompt}
@@ -273,7 +367,6 @@ export default function App() {
     />
   );
 }
-
 
 /* =========================================================
    MAIN DASHBOARD CONTAINER
@@ -298,16 +391,8 @@ function Dashboard({
   const [err, setErr] = useState('');
   const [auth, setAuth] = useState(null);
 
-  const [ownerCred, setOwnerCred] = useState(() => {
-    try {
-      return JSON.parse(
-        sessionStorage.getItem('dreamhome_credentials') || 'null'
-      );
-    } catch {
-      return null;
-    }
-  });
-
+  const [ownerCred, setOwnerCred] =
+    useState(getStoredCredentials);
 
   /* =======================================================
      LOAD DATA
@@ -320,7 +405,9 @@ function Dashboard({
         .select(
           '*,category:categories(id,name,icon),person:persons(id,name)'
         )
-        .order('expense_date', { ascending: false }),
+        .order('expense_date', {
+          ascending: false
+        }),
 
       supabase
         .from('categories')
@@ -336,9 +423,9 @@ function Dashboard({
     if (e.error || c.error || p.error) {
       setErr(
         e.error?.message ||
-        c.error?.message ||
-        p.error?.message ||
-        'Unable to load data.'
+          c.error?.message ||
+          p.error?.message ||
+          'Unable to load data.'
       );
     } else {
       setExpenses(e.data || []);
@@ -352,7 +439,6 @@ function Dashboard({
     load();
   }, []);
 
-
   /* =======================================================
      FILTERED EXPENSES
   ======================================================= */
@@ -363,22 +449,29 @@ function Dashboard({
 
       const matchesSearch =
         !q ||
-        String(x.title || '').toLowerCase().includes(q) ||
-        String(x.category?.name || '').toLowerCase().includes(q) ||
+        String(x.title || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.category?.name || '')
+          .toLowerCase()
+          .includes(q) ||
         String(
           x.person?.name ||
-          x.paid_by ||
-          ''
-        ).toLowerCase().includes(q);
+            x.paid_by ||
+            ''
+        )
+          .toLowerCase()
+          .includes(q);
 
       const matchesMonth =
         month === 'all' ||
-        String(x.expense_date).startsWith(month);
+        String(x.expense_date).startsWith(
+          month
+        );
 
       return matchesSearch && matchesMonth;
     });
   }, [expenses, search, month]);
-
 
   /* =======================================================
      TOTALS
@@ -387,7 +480,8 @@ function Dashboard({
   const total = useMemo(
     () =>
       expenses.reduce(
-        (s, x) => s + Number(x.amount || 0),
+        (s, x) =>
+          s + Number(x.amount || 0),
         0
       ),
     [expenses]
@@ -397,7 +491,9 @@ function Dashboard({
     () =>
       sumBy(
         expenses,
-        x => x.category?.name || 'Other'
+        x =>
+          x.category?.name ||
+          'Other'
       ),
     [expenses]
   );
@@ -419,11 +515,13 @@ function Dashboard({
       sumBy(
         expenses,
         x =>
-          String(x.expense_date).slice(0, 7)
+          String(x.expense_date).slice(
+            0,
+            7
+          )
       ),
     [expenses]
   );
-
 
   /* =======================================================
      LOGOUT
@@ -433,17 +531,18 @@ function Dashboard({
     setOwner(false);
     setOwnerCred(null);
 
-    sessionStorage.removeItem(
-      'dreamhome_credentials'
+    localStorage.removeItem(
+      OWNER_KEY
     );
 
-    sessionStorage.removeItem(
-      'dreamhome_owner'
+    localStorage.removeItem(
+      CREDENTIALS_KEY
     );
 
     setTab('dashboard');
+    setAuth(null);
+    setErr('');
   }
-
 
   /* =======================================================
      DELETE EXPENSE
@@ -457,29 +556,38 @@ function Dashboard({
       return;
     }
 
-    if (!confirm('Delete this expense?')) return;
+    if (
+      !window.confirm(
+        'Delete this expense?'
+      )
+    ) {
+      return;
+    }
 
-    const { data, error } =
-      await supabase.rpc(
-        'owner_delete_expense',
-        {
-          p_username: ownerCred.username,
-          p_password: ownerCred.password,
-          p_id: id
-        }
-      );
+    const {
+      data,
+      error
+    } = await supabase.rpc(
+      'owner_delete_expense',
+      {
+        p_username:
+          ownerCred.username,
+        p_password:
+          ownerCred.password,
+        p_id: id
+      }
+    );
 
     if (error || !data?.ok) {
       setErr(
         error?.message ||
-        data?.message ||
-        'Delete failed'
+          data?.message ||
+          'Delete failed'
       );
     } else {
       await load();
     }
   }
-
 
   /* =======================================================
      CSV EXPORT
@@ -501,36 +609,47 @@ function Dashboard({
         x.title,
         x.category?.name || '',
         x.amount,
-        x.person?.name || x.paid_by || '',
+        x.person?.name ||
+          x.paid_by ||
+          '',
         x.notes || ''
       ])
     ];
 
     const s = rows
-      .map(r =>
-        r
-          .map(v =>
-            `"${String(v).replaceAll('"', '""')}"`
+      .map(row =>
+        row
+          .map(
+            value =>
+              `"${String(value).replaceAll(
+                '"',
+                '""'
+              )}"`
           )
           .join(',')
       )
       .join('\n');
 
-    const a = document.createElement('a');
+    const url =
+      URL.createObjectURL(
+        new Blob([s], {
+          type: 'text/csv'
+        })
+      );
 
-    a.href = URL.createObjectURL(
-      new Blob([s], {
-        type: 'text/csv'
-      })
-    );
+    const a =
+      document.createElement('a');
 
-    a.download = 'dream-home-expenses.csv';
+    a.href = url;
+    a.download =
+      'dream-home-expenses.csv';
 
+    document.body.appendChild(a);
     a.click();
+    a.remove();
 
-    URL.revokeObjectURL(a.href);
+    URL.revokeObjectURL(url);
   }
-
 
   /* =======================================================
      RENDER
@@ -548,7 +667,6 @@ function Dashboard({
         </div>
 
         <div className="head-actions">
-
           {installPrompt && (
             <button
               className="secondary small install-button"
@@ -590,7 +708,9 @@ function Dashboard({
           ) : (
             <button
               className="primary small"
-              onClick={() => setAuth('login')}
+              onClick={() =>
+                setAuth('login')
+              }
               type="button"
             >
               <Lock size={15} />
@@ -600,11 +720,8 @@ function Dashboard({
         </div>
       </header>
 
-
       <div className="layout">
-
         <aside>
-
           <div className="side-brand">
             <img
               src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
@@ -613,13 +730,13 @@ function Dashboard({
 
             <div>
               <b>Dream Home</b>
-              <small>Family finances</small>
+              <small>
+                Family finances
+              </small>
             </div>
           </div>
 
-
           <div className="nav-list">
-
             <Nav
               t={tab}
               set={setTab}
@@ -655,12 +772,9 @@ function Dashboard({
             >
               Persons
             </Nav>
-
           </div>
 
-
           <div className="side-bottom">
-
             <span className="secure-mark">
               <Check size={14} />
             </span>
@@ -674,27 +788,24 @@ function Dashboard({
                   : 'View-only access is active.'}
               </small>
             </div>
-
           </div>
-
         </aside>
 
-
         <main>
-
           {err && (
             <div className="error">
               <span>{err}</span>
 
               <button
-                onClick={() => setErr('')}
+                onClick={() =>
+                  setErr('')
+                }
                 type="button"
               >
                 <X size={15} />
               </button>
             </div>
           )}
-
 
           {tab === 'dashboard' && (
             <DashboardView
@@ -706,7 +817,6 @@ function Dashboard({
               setAuth={setAuth}
             />
           )}
-
 
           {tab === 'expenses' && (
             <ExpensesView
@@ -722,7 +832,6 @@ function Dashboard({
             />
           )}
 
-
           {tab === 'summary' && (
             <SummaryView
               total={total}
@@ -732,7 +841,6 @@ function Dashboard({
               monthly={monthly}
             />
           )}
-
 
           {tab === 'persons' && (
             <PersonsView
@@ -744,21 +852,26 @@ function Dashboard({
               setErr={setErr}
             />
           )}
-
         </main>
       </div>
 
-
       {auth === 'login' && (
         <OwnerModal
-          mode={setup ? 'login' : 'create'}
+          mode={
+            setup ? 'login' : 'create'
+          }
           close={() => setAuth(null)}
           success={cred => {
             setOwner(true);
             setOwnerCred(cred);
 
-            sessionStorage.setItem(
-              'dreamhome_credentials',
+            localStorage.setItem(
+              OWNER_KEY,
+              'true'
+            );
+
+            localStorage.setItem(
+              CREDENTIALS_KEY,
               JSON.stringify(cred)
             );
 
@@ -767,13 +880,14 @@ function Dashboard({
         />
       )}
 
-
       {auth === 'expense' && (
         <ExpenseModal
           expense={null}
           cats={cats}
           persons={persons}
-          close={() => setAuth(null)}
+          close={() =>
+            setAuth(null)
+          }
           saved={async () => {
             setAuth(null);
             await load();
@@ -782,14 +896,17 @@ function Dashboard({
         />
       )}
 
-
       {typeof auth === 'object' &&
         auth?.type === 'expense' && (
           <ExpenseModal
-            expense={auth.expense || null}
+            expense={
+              auth.expense || null
+            }
             cats={cats}
             persons={persons}
-            close={() => setAuth(null)}
+            close={() =>
+              setAuth(null)
+            }
             saved={async () => {
               setAuth(null);
               await load();
@@ -797,11 +914,9 @@ function Dashboard({
             ownerCred={ownerCred}
           />
         )}
-
     </>
   );
 }
-
 
 /* =========================================================
    DASHBOARD
@@ -825,7 +940,9 @@ function DashboardView({
             <button
               type="button"
               className="primary add-button"
-              onClick={() => setAuth('expense')}
+              onClick={() =>
+                setAuth('expense')
+              }
             >
               <Plus size={17} />
               Add Expense
@@ -834,35 +951,32 @@ function DashboardView({
         }
       />
 
-
       <section className="hero-card">
-
         <div className="hero-copy">
-
           <span className="eyebrow">
             TOTAL SPENDING · ALL MONTHS
           </span>
 
           <h2>{money(total)}</h2>
 
-          <p>total amount spent</p>
+          <p>
+            total amount spent
+          </p>
 
           <div className="hero-meta">
-
             <span>
               <Receipt size={14} />
-              {expenses.length} recorded expenses
+              {expenses.length}{' '}
+              recorded expenses
             </span>
 
             <span>
               <Wallet size={14} />
-              {category.length} categories
+              {category.length}{' '}
+              categories
             </span>
-
           </div>
-
         </div>
-
 
         <div
           className="hero-architecture"
@@ -879,9 +993,7 @@ function DashboardView({
             ₹
           </div>
         </div>
-
       </section>
-
 
       <Card
         title="Person-wise Contribution"
@@ -892,11 +1004,9 @@ function DashboardView({
           total={total}
         />
       </Card>
-
     </>
   );
 }
-
 
 /* =========================================================
    EXPENSES
@@ -923,7 +1033,9 @@ function ExpensesView({
             <button
               type="button"
               className="primary add-button"
-              onClick={() => setAuth('expense')}
+              onClick={() =>
+                setAuth('expense')
+              }
             >
               <Plus size={17} />
               Add Expense
@@ -932,32 +1044,39 @@ function ExpensesView({
         }
       />
 
-
       <div className="expense-toolbar">
-
         <div className="search premium-input">
           <Search size={17} />
 
           <input
             placeholder="Search expenses"
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={e =>
+              setSearch(
+                e.target.value
+              )
+            }
           />
         </div>
-
 
         <label className="month-input">
           <CalendarDays size={16} />
 
           <input
             type="month"
-            value={month === 'all' ? '' : month}
+            value={
+              month === 'all'
+                ? ''
+                : month
+            }
             onChange={e =>
-              setMonth(e.target.value || 'all')
+              setMonth(
+                e.target.value ||
+                  'all'
+              )
             }
           />
         </label>
-
 
         <button
           className="secondary"
@@ -967,17 +1086,15 @@ function ExpensesView({
           <Download size={16} />
           Export
         </button>
-
       </div>
 
-
       <Card>
-
         <div className="result result-premium">
-
           <div>
             <span>Showing</span>
-            <b>{filtered.length}</b>
+            <b>
+              {filtered.length}
+            </b>
             <span>records</span>
           </div>
 
@@ -985,14 +1102,15 @@ function ExpensesView({
             {money(
               filtered.reduce(
                 (s, x) =>
-                  s + Number(x.amount || 0),
+                  s +
+                  Number(
+                    x.amount || 0
+                  ),
                 0
               )
             )}
           </strong>
-
         </div>
-
 
         <Table
           rows={filtered}
@@ -1005,12 +1123,10 @@ function ExpensesView({
           }
           del={del}
         />
-
       </Card>
     </>
   );
 }
-
 
 /* =========================================================
    SUMMARY
@@ -1030,11 +1146,8 @@ function SummaryView({
         sub="See the bigger picture behind your home spending."
       />
 
-
       <section className="summary-hero">
-
         <div>
-
           <span className="eyebrow">
             ALL-TIME SPENDING
           </span>
@@ -1044,23 +1157,22 @@ function SummaryView({
           </strong>
 
           <p>
-            {expenses.length} transactions across{' '}
-            {category.length} categories
+            {expenses.length}{' '}
+            transactions across{' '}
+            {category.length}{' '}
+            categories
           </p>
-
         </div>
-
 
         <div className="summary-badge">
           <BarChart3 size={20} />
-          <span>Financial overview</span>
+          <span>
+            Financial overview
+          </span>
         </div>
-
       </section>
 
-
       <div className="content-grid summary-content">
-
         <Card
           title="Category breakdown"
           subtitle="Share of total spending"
@@ -1070,7 +1182,6 @@ function SummaryView({
             total={total}
           />
         </Card>
-
 
         <Card
           title="Paid by"
@@ -1082,22 +1193,22 @@ function SummaryView({
           />
         </Card>
 
-
         <Card
           title="Monthly spending"
           subtitle="Recent month-to-month view"
           wide
         >
           <MonthlyBars
-            items={monthly.slice(0, 8)}
+            items={monthly.slice(
+              0,
+              8
+            )}
           />
         </Card>
-
       </div>
     </>
   );
 }
-
 
 /* =========================================================
    PERSONS VIEW
@@ -1111,64 +1222,97 @@ function PersonsView({
   load,
   setErr
 }) {
-  const [editing, setEditing] = useState(null);
-  const [name, setName] = useState('');
-  const [busy, setBusy] = useState(false);
+  const [editing, setEditing] =
+    useState(null);
 
+  const [name, setName] =
+    useState('');
+
+  const [busy, setBusy] =
+    useState(false);
 
   const personStats = useMemo(() => {
     return persons.map(person => {
-      const personExpenses = expenses.filter(
-        expense =>
-          expense.person_id === person.id ||
-          expense.person?.id === person.id
-      );
+      const personExpenses =
+        expenses.filter(
+          expense =>
+            expense.person_id ===
+              person.id ||
+            expense.person?.id ===
+              person.id
+        );
 
-      const total = personExpenses.reduce(
-        (sum, expense) =>
-          sum + Number(expense.amount || 0),
-        0
-      );
+      const total =
+        personExpenses.reduce(
+          (sum, expense) =>
+            sum +
+            Number(
+              expense.amount || 0
+            ),
+          0
+        );
 
       return {
         ...person,
         total,
-        count: personExpenses.length
+        count:
+          personExpenses.length
       };
     });
   }, [persons, expenses]);
-
 
   const grandTotal = useMemo(
     () =>
       expenses.reduce(
         (sum, expense) =>
-          sum + Number(expense.amount || 0),
+          sum +
+          Number(
+            expense.amount || 0
+          ),
         0
       ),
     [expenses]
   );
 
+  /* =======================================================
+     ADD PERSON
+  ======================================================= */
 
   function startAdd() {
-    setEditing('new');
-    setName('');
     setErr('');
+    setName('');
+    setEditing({
+      mode: 'new'
+    });
   }
 
+  /* =======================================================
+     EDIT PERSON
+  ======================================================= */
 
   function startEdit(person) {
-    setEditing(person);
-    setName(person.name || '');
     setErr('');
+    setName(person?.name || '');
+
+    setEditing({
+      mode: 'edit',
+      person
+    });
   }
 
+  /* =======================================================
+     CLOSE PERSON MODAL
+  ======================================================= */
 
   function closeModal() {
     setEditing(null);
     setName('');
+    setBusy(false);
   }
 
+  /* =======================================================
+     SAVE PERSON
+  ======================================================= */
 
   async function savePerson(e) {
     e.preventDefault();
@@ -1180,17 +1324,21 @@ function PersonsView({
       return;
     }
 
-    const cleanName = name.trim();
+    const cleanName =
+      name.trim();
 
     if (!cleanName) {
-      setErr('Please enter a person name.');
+      setErr(
+        'Please enter a person name.'
+      );
       return;
     }
 
     setBusy(true);
     setErr('');
 
-    const isNew = editing === 'new';
+    const isNew =
+      editing?.mode === 'new';
 
     const rpcName = isNew
       ? 'owner_add_person'
@@ -1198,39 +1346,60 @@ function PersonsView({
 
     const params = isNew
       ? {
-          p_username: ownerCred.username,
-          p_password: ownerCred.password,
+          p_username:
+            ownerCred.username,
+          p_password:
+            ownerCred.password,
           p_name: cleanName
         }
       : {
-          p_username: ownerCred.username,
-          p_password: ownerCred.password,
-          p_id: editing.id,
+          p_username:
+            ownerCred.username,
+          p_password:
+            ownerCred.password,
+          p_id:
+            editing?.person?.id,
           p_name: cleanName
         };
 
-    const {
-      data,
-      error
-    } = await supabase.rpc(
-      rpcName,
-      params
-    );
-
-    if (error || !data?.ok) {
-      setErr(
-        error?.message ||
-        data?.message ||
-        'Unable to save person.'
+    try {
+      const {
+        data,
+        error
+      } = await supabase.rpc(
+        rpcName,
+        params
       );
-    } else {
+
+      if (
+        error ||
+        !data?.ok
+      ) {
+        setErr(
+          error?.message ||
+            data?.message ||
+            'Unable to save person.'
+        );
+
+        setBusy(false);
+        return;
+      }
+
       closeModal();
       await load();
+    } catch (error) {
+      setErr(
+        error?.message ||
+          'Unable to save person.'
+      );
+    } finally {
+      setBusy(false);
     }
-
-    setBusy(false);
   }
 
+  /* =======================================================
+     DELETE PERSON
+  ======================================================= */
 
   async function deletePerson(person) {
     if (!ownerCred) {
@@ -1241,36 +1410,47 @@ function PersonsView({
     }
 
     if (
-      !confirm(
+      !window.confirm(
         `Delete "${person.name}"?`
       )
     ) {
       return;
     }
 
-    const {
-      data,
-      error
-    } = await supabase.rpc(
-      'owner_delete_person',
-      {
-        p_username: ownerCred.username,
-        p_password: ownerCred.password,
-        p_id: person.id
-      }
-    );
+    try {
+      const {
+        data,
+        error
+      } = await supabase.rpc(
+        'owner_delete_person',
+        {
+          p_username:
+            ownerCred.username,
+          p_password:
+            ownerCred.password,
+          p_id: person.id
+        }
+      );
 
-    if (error || !data?.ok) {
+      if (
+        error ||
+        !data?.ok
+      ) {
+        setErr(
+          error?.message ||
+            data?.message ||
+            'Unable to delete person.'
+        );
+      } else {
+        await load();
+      }
+    } catch (error) {
       setErr(
         error?.message ||
-        data?.message ||
-        'Unable to delete person.'
+          'Unable to delete person.'
       );
-    } else {
-      await load();
     }
   }
-
 
   return (
     <>
@@ -1291,11 +1471,8 @@ function PersonsView({
         }
       />
 
-
       <section className="persons-overview">
-
         <div className="persons-overview-main">
-
           <div className="persons-overview-icon">
             <UsersIcon size={22} />
           </div>
@@ -1310,48 +1487,46 @@ function PersonsView({
             </strong>
 
             <p>
-              Total spending recorded across all persons
+              Total spending recorded
+              across all persons
             </p>
           </div>
-
         </div>
 
-
         <div className="persons-count">
-
           <span>PEOPLE</span>
 
-          <strong>{persons.length}</strong>
+          <strong>
+            {persons.length}
+          </strong>
 
           <small>
             {persons.length === 1
               ? 'family member'
               : 'family members'}
           </small>
-
         </div>
-
       </section>
-
 
       <Card
         title="Family Members"
         subtitle="People available in the Paid By selector"
       >
-
         {!personStats.length ? (
-
           <div className="persons-empty">
-
             <div className="persons-empty-icon">
               <UsersIcon size={24} />
             </div>
 
-            <b>No persons added yet</b>
+            <b>
+              No persons added yet
+            </b>
 
             <p>
-              Add family members here so their names
-              can be selected while recording expenses.
+              Add family members here
+              so their names can be
+              selected while recording
+              expenses.
             </p>
 
             {owner && (
@@ -1364,199 +1539,216 @@ function PersonsView({
                 Add First Person
               </button>
             )}
-
           </div>
-
         ) : (
-
           <div className="persons-grid">
-
-            {personStats.map(person => {
-
-              const percentage =
-                grandTotal > 0
-                  ? Math.round(
-                      (person.total / grandTotal) * 100
-                    )
-                  : 0;
-
-              return (
-                <article
-                  className="person-card"
-                  key={person.id}
-                >
-
-                  <div className="person-card-head">
-
-                    <div className="person-avatar-large">
-                      {String(
-                        person.name || '?'
+            {personStats.map(
+              person => {
+                const percentage =
+                  grandTotal > 0
+                    ? Math.round(
+                        (person.total /
+                          grandTotal) *
+                          100
                       )
-                        .slice(0, 1)
-                        .toUpperCase()}
+                    : 0;
+
+                return (
+                  <article
+                    className="person-card"
+                    key={person.id}
+                  >
+                    <div className="person-card-head">
+                      <div className="person-avatar-large">
+                        {String(
+                          person.name ||
+                            '?'
+                        )
+                          .slice(0, 1)
+                          .toUpperCase()}
+                      </div>
+
+                      <div className="person-card-name">
+                        <b>
+                          {person.name}
+                        </b>
+
+                        <span>
+                          {person.count ===
+                          0
+                            ? 'No expenses yet'
+                            : `${person.count} ${
+                                person.count ===
+                                1
+                                  ? 'expense'
+                                  : 'expenses'
+                              }`}
+                        </span>
+                      </div>
+
+                      {owner && (
+                        <div className="person-card-menu">
+                          <button
+                            className="icon"
+                            type="button"
+                            title="Edit person"
+                            onClick={() =>
+                              startEdit(
+                                person
+                              )
+                            }
+                          >
+                            <Edit3
+                              size={15}
+                            />
+                          </button>
+
+                          <button
+                            className="icon danger"
+                            type="button"
+                            title="Delete person"
+                            onClick={() =>
+                              deletePerson(
+                                person
+                              )
+                            }
+                          >
+                            <Trash2
+                              size={15}
+                            />
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    <div className="person-card-name">
-                      <b>{person.name}</b>
+                    <div className="person-card-total">
+                      <span>
+                        Total contribution
+                      </span>
+
+                      <strong>
+                        {money(
+                          person.total
+                        )}
+                      </strong>
+                    </div>
+
+                    <div className="person-progress">
+                      <div className="person-progress-head">
+                        <span>
+                          Contribution
+                        </span>
+
+                        <b>
+                          {percentage}%
+                        </b>
+                      </div>
+
+                      <div className="person-progress-track">
+                        <span
+                          style={{
+                            width: `${Math.max(
+                              percentage,
+                              person.total >
+                                0
+                                ? 2
+                                : 0
+                            )}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="person-card-footer">
+                      <span>
+                        <Receipt
+                          size={13}
+                        />
+                        {person.count}{' '}
+                        {person.count ===
+                        1
+                          ? 'record'
+                          : 'records'}
+                      </span>
 
                       <span>
-                        {person.count === 0
-                          ? 'No expenses yet'
-                          : `${person.count} ${
-                              person.count === 1
-                                ? 'expense'
-                                : 'expenses'
-                            }`}
+                        {percentage}% of
+                        total
                       </span>
                     </div>
-
-
-                    {owner && (
-                      <div className="person-card-menu">
-
-                        <button
-                          className="icon"
-                          type="button"
-                          title="Edit person"
-                          onClick={() =>
-                            startEdit(person)
-                          }
-                        >
-                          <Edit3 size={15} />
-                        </button>
-
-                        <button
-                          className="icon danger"
-                          type="button"
-                          title="Delete person"
-                          onClick={() =>
-                            deletePerson(person)
-                          }
-                        >
-                          <Trash2 size={15} />
-                        </button>
-
-                      </div>
-                    )}
-
-                  </div>
-
-
-                  <div className="person-card-total">
-
-                    <span>Total contribution</span>
-
-                    <strong>
-                      {money(person.total)}
-                    </strong>
-
-                  </div>
-
-
-                  <div className="person-progress">
-
-                    <div className="person-progress-head">
-                      <span>Contribution</span>
-
-                      <b>
-                        {percentage}%
-                      </b>
-                    </div>
-
-                    <div className="person-progress-track">
-
-                      <span
-                        style={{
-                          width: `${Math.max(
-                            percentage,
-                            person.total > 0 ? 2 : 0
-                          )}%`
-                        }}
-                      />
-
-                    </div>
-
-                  </div>
-
-
-                  <div className="person-card-footer">
-
-                    <span>
-                      <Receipt size={13} />
-                      {person.count}{' '}
-                      {person.count === 1
-                        ? 'record'
-                        : 'records'}
-                    </span>
-
-                    <span>
-                      {percentage}% of total
-                    </span>
-
-                  </div>
-
-                </article>
-              );
-            })}
-
+                  </article>
+                );
+              }
+            )}
           </div>
         )}
-
       </Card>
 
+      {/* ===================================================
+          PERSON MODAL
+      =================================================== */}
 
       {editing && (
-        <div className="backdrop">
-
-          <div className="modal person-modal">
-
+        <div
+          className="backdrop"
+          role="dialog"
+          aria-modal="true"
+          onMouseDown={e => {
+            if (
+              e.target === e.currentTarget &&
+              !busy
+            ) {
+              closeModal();
+            }
+          }}
+        >
+          <div
+            className="modal person-modal"
+            onMouseDown={e =>
+              e.stopPropagation()
+            }
+          >
             <div className="modal-head">
-
               <div className="modal-title-with-icon">
-
                 <div className="modal-person-icon">
                   <UsersIcon size={19} />
                 </div>
 
                 <div>
-
                   <div className="page-kicker">
                     DREAM HOME
                   </div>
 
                   <h2>
-                    {editing === 'new'
+                    {editing.mode ===
+                    'new'
                       ? 'Add Person'
                       : 'Edit Person'}
                   </h2>
 
                   <p>
-                    {editing === 'new'
+                    {editing.mode ===
+                    'new'
                       ? 'Add a person who can be selected when recording expenses.'
                       : "Update the person's name."}
                   </p>
-
                 </div>
-
               </div>
-
 
               <button
                 className="icon"
                 onClick={closeModal}
                 type="button"
+                disabled={busy}
               >
                 <X />
               </button>
-
             </div>
-
 
             <form
               className="form"
               onSubmit={savePerson}
             >
-
               <label>
                 Person Name
 
@@ -1565,13 +1757,14 @@ function PersonsView({
                   required
                   value={name}
                   onChange={e =>
-                    setName(e.target.value)
+                    setName(
+                      e.target.value
+                    )
                   }
                   placeholder="Enter person's name"
+                  disabled={busy}
                 />
-
               </label>
-
 
               {err && (
                 <div className="notice">
@@ -1579,46 +1772,41 @@ function PersonsView({
                 </div>
               )}
 
-
               <div className="modal-actions">
-
                 <button
                   type="button"
                   className="secondary"
                   onClick={closeModal}
+                  disabled={busy}
                 >
                   Cancel
                 </button>
 
-
                 <button
                   type="submit"
                   className="primary"
-                  disabled={busy}
+                  disabled={
+                    busy ||
+                    !name.trim()
+                  }
                 >
-                  {busy
-                    ? 'Saving…'
-                    : (
-                      <>
-                        <Check />
-                        Save Person
-                      </>
-                    )}
+                  {busy ? (
+                    'Saving…'
+                  ) : (
+                    <>
+                      <Check />
+                      Save Person
+                    </>
+                  )}
                 </button>
-
               </div>
-
             </form>
-
           </div>
-
         </div>
       )}
-
     </>
   );
 }
-
 
 /* =========================================================
    NAVIGATION
@@ -1647,7 +1835,6 @@ function Nav({
   );
 }
 
-
 /* =========================================================
    HEADER
 ========================================================= */
@@ -1659,7 +1846,6 @@ function Head({
 }) {
   return (
     <div className="page-head">
-
       <div>
         <div className="page-kicker">
           DREAM HOME
@@ -1671,11 +1857,9 @@ function Head({
       </div>
 
       {action}
-
     </div>
   );
 }
-
 
 /* =========================================================
    CARD
@@ -1694,12 +1878,9 @@ function Card({
         wide ? 'wide' : ''
       }`}
     >
-
       {(title || action) && (
         <div className="card-title">
-
           <div>
-
             {title && (
               <b>{title}</b>
             )}
@@ -1709,20 +1890,16 @@ function Card({
                 {subtitle}
               </small>
             )}
-
           </div>
 
           {action}
-
         </div>
       )}
 
       {children}
-
     </section>
   );
 }
-
 
 /* =========================================================
    CATEGORY BARS
@@ -1734,53 +1911,44 @@ function CategoryBars({
 }) {
   return (
     <div className="premium-bars">
-
       {items.length ? (
         items.map(
           ([name, value]) => {
-
-            const pct =
-              total
-                ? Math.round(
-                    (value / total) * 100
-                  )
-                : 0;
+            const pct = total
+              ? Math.round(
+                  (value / total) *
+                    100
+                )
+              : 0;
 
             return (
               <div
                 className="premium-bar"
                 key={name}
               >
-
                 <div className="premium-bar-head">
-
                   <div className="premium-label">
-
                     <CategoryIcon
-                      category={{ name }}
+                      category={{
+                        name
+                      }}
                       size={15}
                     />
 
                     <span>
                       {name}
                     </span>
-
                   </div>
-
 
                   <b>
                     {money(value)}{' '}
-
                     <em>
                       {pct}%
                     </em>
                   </b>
-
                 </div>
 
-
                 <div className="premium-track">
-
                   <span
                     style={{
                       width: `${Math.max(
@@ -1789,9 +1957,7 @@ function CategoryBars({
                       )}%`
                     }}
                   />
-
                 </div>
-
               </div>
             );
           }
@@ -1801,11 +1967,9 @@ function CategoryBars({
           No expenses yet.
         </div>
       )}
-
     </div>
   );
 }
-
 
 /* =========================================================
    PERSON BARS
@@ -1817,28 +1981,23 @@ function PersonBars({
 }) {
   return (
     <div className="premium-bars">
-
       {items.length ? (
         items.map(
           ([name, value]) => {
-
-            const pct =
-              total
-                ? Math.round(
-                    (value / total) * 100
-                  )
-                : 0;
+            const pct = total
+              ? Math.round(
+                  (value / total) *
+                    100
+                )
+              : 0;
 
             return (
               <div
                 className="premium-bar"
                 key={name}
               >
-
                 <div className="premium-bar-head">
-
                   <div className="premium-label">
-
                     <span className="person-dot">
                       {String(name)
                         .slice(0, 1)
@@ -1848,23 +2007,17 @@ function PersonBars({
                     <span>
                       {name}
                     </span>
-
                   </div>
-
 
                   <b>
                     {money(value)}{' '}
-
                     <em>
                       {pct}%
                     </em>
                   </b>
-
                 </div>
 
-
                 <div className="premium-track">
-
                   <span
                     style={{
                       width: `${Math.max(
@@ -1873,9 +2026,7 @@ function PersonBars({
                       )}%`
                     }}
                   />
-
                 </div>
-
               </div>
             );
           }
@@ -1885,11 +2036,9 @@ function PersonBars({
           No expenses yet.
         </div>
       )}
-
     </div>
   );
 }
-
 
 /* =========================================================
    MONTHLY BARS
@@ -1913,55 +2062,53 @@ function MonthlyBars({
 
   return (
     <div className="monthly-bars">
-
       {items
         .slice()
         .reverse()
-        .map(([name, value]) => {
+        .map(
+          ([name, value]) => {
+            const label =
+              new Date(
+                `${name}-01T00:00:00`
+              ).toLocaleDateString(
+                'en-IN',
+                {
+                  month: 'short'
+                }
+              );
 
-          const label =
-            new Date(
-              `${name}-01T00:00:00`
-            ).toLocaleDateString(
-              'en-IN',
-              {
-                month: 'short'
-              }
+            return (
+              <div
+                className="month-column"
+                key={name}
+              >
+                <div className="month-value">
+                  {money(value)}
+                </div>
+
+                <div className="month-bar">
+                  <span
+                    style={{
+                      height: `${Math.max(
+                        (value /
+                          max) *
+                          100,
+                        7
+                      )}%`
+                    }}
+                  />
+                </div>
+
+                <small>
+                  {label}
+                </small>
+              </div>
             );
-
-          return (
-            <div
-              className="month-column"
-              key={name}
-            >
-
-              <div className="month-value">
-                {money(value)}
-              </div>
-
-              <div className="month-bar">
-
-                <span
-                  style={{
-                    height: `${Math.max(
-                      (value / max) * 100,
-                      7
-                    )}%`
-                  }}
-                />
-
-              </div>
-
-              <small>{label}</small>
-
-            </div>
-          );
-        })}
-
+          }
+        )}
     </div>
   );
 }
-
 
 /* =========================================================
    EXPENSE TABLE
@@ -1984,11 +2131,8 @@ function Table({
   return (
     <>
       <div className="table-wrap desktop-table">
-
         <table>
-
           <thead>
-
             <tr>
               <th>Date</th>
               <th>Expense</th>
@@ -2000,26 +2144,19 @@ function Table({
               </th>
 
               {owner && (
-                <th>
-                  Actions
-                </th>
+                <th>Actions</th>
               )}
-
             </tr>
-
           </thead>
 
-
           <tbody>
-
             {rows.map(x => (
-
               <tr key={x.id}>
-
                 <td>
-                  {dateText(x.expense_date)}
+                  {dateText(
+                    x.expense_date
+                  )}
                 </td>
-
 
                 <td>
                   <b>{x.title}</b>
@@ -2031,22 +2168,20 @@ function Table({
                   )}
                 </td>
 
-
                 <td>
-
                   <span className="category-chip">
-
                     <CategoryIcon
-                      category={x.category}
+                      category={
+                        x.category
+                      }
                       size={15}
                     />
 
-                    {categoryLabel(x.category)}
-
+                    {categoryLabel(
+                      x.category
+                    )}
                   </span>
-
                 </td>
-
 
                 <td>
                   {x.person?.name ||
@@ -2054,86 +2189,81 @@ function Table({
                     '—'}
                 </td>
 
-
                 <td className="right amount">
-                  {money(x.amount)}
+                  {money(
+                    x.amount
+                  )}
                 </td>
-
 
                 {owner && (
                   <td className="actions-cell">
-
                     <button
                       className="icon action-edit"
-                      onClick={() => edit(x)}
+                      onClick={() =>
+                        edit(x)
+                      }
                       type="button"
                       title="Edit"
                     >
-                      <Edit3 size={15} />
+                      <Edit3
+                        size={15}
+                      />
                     </button>
-
 
                     <button
                       className="icon danger"
-                      onClick={() => del(x.id)}
+                      onClick={() =>
+                        del(x.id)
+                      }
                       type="button"
                       title="Delete"
                     >
-                      <Trash2 size={15} />
+                      <Trash2
+                        size={15}
+                      />
                     </button>
-
                   </td>
                 )}
-
               </tr>
-
             ))}
-
           </tbody>
-
         </table>
-
       </div>
 
-
       <div className="mobile-expenses">
-
         {rows.map(x => (
-
           <article
             className="expense-card"
             key={x.id}
           >
-
             <div className="expense-card-top">
-
               <CategoryIcon
-                category={x.category}
+                category={
+                  x.category
+                }
                 size={17}
               />
 
               <div className="expense-card-title">
-
                 <b>{x.title}</b>
 
                 <span>
-                  {dateText(x.expense_date)}
+                  {dateText(
+                    x.expense_date
+                  )}
                 </span>
-
               </div>
-
 
               <strong>
                 {money(x.amount)}
               </strong>
-
             </div>
 
-
             <div className="expense-card-meta">
-
               <span>
-                {categoryLabel(x.category)}
+                {categoryLabel(
+                  x.category
+                )}
               </span>
 
               <span>
@@ -2144,9 +2274,7 @@ function Table({
                     '—'}
                 </b>
               </span>
-
             </div>
-
 
             {x.notes && (
               <p className="expense-card-note">
@@ -2154,41 +2282,37 @@ function Table({
               </p>
             )}
 
-
             {owner && (
               <div className="expense-card-actions">
-
                 <button
                   className="mobile-action edit-mobile"
-                  onClick={() => edit(x)}
+                  onClick={() =>
+                    edit(x)
+                  }
                   type="button"
                 >
                   <Edit3 size={14} />
                   Edit
                 </button>
 
-
                 <button
                   className="mobile-action delete-mobile"
-                  onClick={() => del(x.id)}
+                  onClick={() =>
+                    del(x.id)
+                  }
                   type="button"
                 >
                   <Trash2 size={14} />
                   Delete
                 </button>
-
               </div>
             )}
-
           </article>
-
         ))}
-
       </div>
     </>
   );
 }
-
 
 /* =========================================================
    OWNER MODAL
@@ -2199,11 +2323,17 @@ function OwnerModal({
   close,
   success
 }) {
-  const [u, setU] = useState('');
-  const [p, setP] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+  const [u, setU] =
+    useState('');
 
+  const [p, setP] =
+    useState('');
+
+  const [busy, setBusy] =
+    useState(false);
+
+  const [err, setErr] =
+    useState('');
 
   async function go(e) {
     e.preventDefault();
@@ -2216,51 +2346,59 @@ function OwnerModal({
         ? 'owner_create'
         : 'owner_login';
 
-    const {
-      data,
-      error
-    } = await supabase.rpc(
-      fn,
-      {
-        p_username: u.trim(),
-        p_password: p
-      }
-    );
-
-    if (error || !data?.ok) {
-      setErr(
-        error?.message ||
-        data?.message ||
-        'Something went wrong.'
+    try {
+      const {
+        data,
+        error
+      } = await supabase.rpc(
+        fn,
+        {
+          p_username:
+            u.trim(),
+          p_password: p
+        }
       );
-    } else {
+
+      if (
+        error ||
+        !data?.ok
+      ) {
+        setErr(
+          error?.message ||
+            data?.message ||
+            'Something went wrong.'
+        );
+
+        setBusy(false);
+        return;
+      }
+
       success({
         username:
           u.trim().toLowerCase(),
         password: p
       });
+    } catch (error) {
+      setErr(
+        error?.message ||
+          'Something went wrong.'
+      );
+    } finally {
+      setBusy(false);
     }
-
-    setBusy(false);
   }
-
 
   return (
     <div className="backdrop">
-
       <div className="modal auth-modal">
-
         <div className="modal-head">
-
           <div className="auth-title">
-
             <img
               src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
               alt="Dream Home"
             />
 
             <div>
-
               <div className="page-kicker">
                 DREAM HOME
               </div>
@@ -2276,11 +2414,8 @@ function OwnerModal({
                   ? 'Create the edit credential for your tracker.'
                   : 'Enter the shared edit credential.'}
               </p>
-
             </div>
-
           </div>
-
 
           <button
             className="icon"
@@ -2289,30 +2424,28 @@ function OwnerModal({
           >
             <X />
           </button>
-
         </div>
-
 
         <form
           className="form"
           onSubmit={go}
         >
-
           <label>
             Username
 
             <input
               value={u}
               onChange={e =>
-                setU(e.target.value)
+                setU(
+                  e.target.value
+                )
               }
               autoCapitalize="none"
+              autoCorrect="off"
               required
               placeholder="dreamhome"
             />
-
           </label>
-
 
           <label>
             Password
@@ -2321,22 +2454,21 @@ function OwnerModal({
               type="password"
               value={p}
               onChange={e =>
-                setP(e.target.value)
+                setP(
+                  e.target.value
+                )
               }
               minLength={8}
               required
               placeholder="At least 8 characters"
             />
-
           </label>
-
 
           {err && (
             <div className="notice">
               {err}
             </div>
           )}
-
 
           <button
             className="primary full"
@@ -2349,22 +2481,18 @@ function OwnerModal({
               ? 'Create Owner Account'
               : 'Login & Enable Editing'}
           </button>
-
         </form>
-
 
         {mode === 'create' && (
           <small className="privacy">
-            This is an app login, not your Supabase login.
+            This is an app login, not
+            your Supabase login.
           </small>
         )}
-
       </div>
-
     </div>
   );
 }
-
 
 /* =========================================================
    EXPENSE MODAL
@@ -2381,36 +2509,43 @@ function ExpenseModal({
   const [date, setDate] =
     useState(
       expense?.expense_date ||
-      new Date()
-        .toISOString()
-        .slice(0, 10)
+        new Date()
+          .toISOString()
+          .slice(0, 10)
     );
 
   const [title, setTitle] =
-    useState(expense?.title || '');
+    useState(
+      expense?.title || ''
+    );
 
   const [cat, setCat] =
     useState(
       expense?.category_id ||
-      cats[0]?.id ||
-      ''
+        cats[0]?.id ||
+        ''
     );
 
   const [amount, setAmount] =
-    useState(expense?.amount || '');
+    useState(
+      expense?.amount || ''
+    );
 
   const [paid, setPaid] =
-    useState(expense?.person_id || '');
+    useState(
+      expense?.person_id || ''
+    );
 
   const [notes, setNotes] =
-    useState(expense?.notes || '');
+    useState(
+      expense?.notes || ''
+    );
 
   const [busy, setBusy] =
     useState(false);
 
   const [err, setErr] =
     useState('');
-
 
   async function save(e) {
     e.preventDefault();
@@ -2438,7 +2573,7 @@ function ExpenseModal({
 
     const selectedPerson =
       persons.find(
-        p => p.id === paid
+        p => String(p.id) === String(paid)
       );
 
     if (!selectedPerson) {
@@ -2448,133 +2583,153 @@ function ExpenseModal({
       return;
     }
 
+    if (
+      !title.trim() ||
+      Number(amount) <= 0
+    ) {
+      setErr(
+        'Please enter a valid expense and amount.'
+      );
+      return;
+    }
+
     setBusy(true);
     setErr('');
 
     const args = {
-      p_username: ownerCred.username,
-      p_password: ownerCred.password,
+      p_username:
+        ownerCred.username,
+
+      p_password:
+        ownerCred.password,
+
       p_expense_date: date,
-      p_title: title.trim(),
+
+      p_title:
+        title.trim(),
+
       p_category_id: cat,
-      p_amount: Number(amount),
-      p_paid_by: selectedPerson.name,
-      p_notes: notes.trim() || null
+
+      p_amount:
+        Number(amount),
+
+      p_paid_by:
+        selectedPerson.name,
+
+      p_notes:
+        notes.trim() || null
     };
 
-
-    const {
-      data,
-      error
-    } = await supabase.rpc(
-      expense
-        ? 'owner_update_expense'
-        : 'owner_add_expense',
-      expense
-        ? {
-            ...args,
-            p_id: expense.id
-          }
-        : args
-    );
-
-
-    if (error || !data?.ok) {
-      setErr(
-        error?.message ||
-        data?.message ||
-        'Save failed.'
+    try {
+      const {
+        data,
+        error
+      } = await supabase.rpc(
+        expense
+          ? 'owner_update_expense'
+          : 'owner_add_expense',
+        expense
+          ? {
+              ...args,
+              p_id: expense.id
+            }
+          : args
       );
 
-      setBusy(false);
-      return;
-    }
-
-
-    let savedExpenseId =
-      expense?.id ||
-      data?.id ||
-      data?.expense_id ||
-      data?.data?.id;
-
-
-    if (!savedExpenseId) {
-
-      const {
-        data: latest
-      } = await supabase
-        .from('expenses')
-        .select(
-          'id,expense_date,title,amount'
-        )
-        .eq(
-          'expense_date',
-          date
-        )
-        .eq(
-          'title',
-          title.trim()
-        )
-        .eq(
-          'amount',
-          Number(amount)
-        )
-        .order(
-          'created_at',
-          {
-            ascending: false
-          }
-        )
-        .limit(1);
-
-      savedExpenseId =
-        latest?.[0]?.id;
-    }
-
-
-    if (savedExpenseId) {
-
-      const {
-        error: linkError
-      } = await supabase
-        .from('expenses')
-        .update({
-          person_id:
-            selectedPerson.id,
-          paid_by:
-            selectedPerson.name
-        })
-        .eq(
-          'id',
-          savedExpenseId
-        );
-
-      if (linkError) {
+      if (
+        error ||
+        !data?.ok
+      ) {
         setErr(
-          `Expense saved, but person link failed: ${linkError.message}`
+          error?.message ||
+            data?.message ||
+            'Save failed.'
         );
 
         setBusy(false);
         return;
       }
+
+      let savedExpenseId =
+        expense?.id ||
+        data?.id ||
+        data?.expense_id ||
+        data?.data?.id;
+
+      if (!savedExpenseId) {
+        const {
+          data: latest
+        } = await supabase
+          .from('expenses')
+          .select(
+            'id,expense_date,title,amount'
+          )
+          .eq(
+            'expense_date',
+            date
+          )
+          .eq(
+            'title',
+            title.trim()
+          )
+          .eq(
+            'amount',
+            Number(amount)
+          )
+          .order(
+            'created_at',
+            {
+              ascending: false
+            }
+          )
+          .limit(1);
+
+        savedExpenseId =
+          latest?.[0]?.id;
+      }
+
+      if (savedExpenseId) {
+        const {
+          error: linkError
+        } = await supabase
+          .from('expenses')
+          .update({
+            person_id:
+              selectedPerson.id,
+            paid_by:
+              selectedPerson.name
+          })
+          .eq(
+            'id',
+            savedExpenseId
+          );
+
+        if (linkError) {
+          setErr(
+            `Expense saved, but person link failed: ${linkError.message}`
+          );
+
+          setBusy(false);
+          return;
+        }
+      }
+
+      await saved();
+    } catch (error) {
+      setErr(
+        error?.message ||
+          'Save failed.'
+      );
+    } finally {
+      setBusy(false);
     }
-
-
-    await saved();
-
-    setBusy(false);
   }
-
 
   return (
     <div className="backdrop">
-
       <div className="modal">
-
         <div className="modal-head">
-
           <div>
-
             <div className="page-kicker">
               DREAM HOME
             </div>
@@ -2588,9 +2743,7 @@ function ExpenseModal({
             <p>
               Record a home payment.
             </p>
-
           </div>
-
 
           <button
             className="icon"
@@ -2599,17 +2752,13 @@ function ExpenseModal({
           >
             <X />
           </button>
-
         </div>
-
 
         <form
           className="form"
           onSubmit={save}
         >
-
           <div className="grid">
-
             <label>
               Date
 
@@ -2618,12 +2767,12 @@ function ExpenseModal({
                 required
                 value={date}
                 onChange={e =>
-                  setDate(e.target.value)
+                  setDate(
+                    e.target.value
+                  )
                 }
               />
-
             </label>
-
 
             <label>
               Amount (₹)
@@ -2635,14 +2784,13 @@ function ExpenseModal({
                 required
                 value={amount}
                 onChange={e =>
-                  setAmount(e.target.value)
+                  setAmount(
+                    e.target.value
+                  )
                 }
               />
-
             </label>
-
           </div>
-
 
           <label>
             Expense / Item
@@ -2651,27 +2799,27 @@ function ExpenseModal({
               required
               value={title}
               onChange={e =>
-                setTitle(e.target.value)
+                setTitle(
+                  e.target.value
+                )
               }
               placeholder="e.g. Cement, tiles"
             />
-
           </label>
 
-
           <div className="grid">
-
             <label>
               Category
 
               <select
                 value={cat}
                 onChange={e =>
-                  setCat(e.target.value)
+                  setCat(
+                    e.target.value
+                  )
                 }
                 required
               >
-
                 <option value="">
                   Select category
                 </option>
@@ -2684,11 +2832,8 @@ function ExpenseModal({
                     {c.name}
                   </option>
                 ))}
-
               </select>
-
             </label>
-
 
             <label>
               Paid By
@@ -2696,37 +2841,41 @@ function ExpenseModal({
               <select
                 value={paid}
                 onChange={e =>
-                  setPaid(e.target.value)
+                  setPaid(
+                    e.target.value
+                  )
                 }
                 required
               >
-
                 <option value="">
                   Select person
                 </option>
 
-                {persons.map(person => (
-                  <option
-                    key={person.id}
-                    value={person.id}
-                  >
-                    {person.name}
-                  </option>
-                ))}
-
+                {persons.map(
+                  person => (
+                    <option
+                      key={person.id}
+                      value={
+                        person.id
+                      }
+                    >
+                      {person.name}
+                    </option>
+                  )
+                )}
               </select>
-
             </label>
-
           </div>
-
 
           {!persons.length && (
             <div className="notice">
-              No persons have been added yet. Please add a person from the Persons tab before recording an expense.
+              No persons have been
+              added yet. Please add a
+              person from the Persons
+              tab before recording an
+              expense.
             </div>
           )}
-
 
           <label>
             Notes
@@ -2735,13 +2884,13 @@ function ExpenseModal({
               rows="3"
               value={notes}
               onChange={e =>
-                setNotes(e.target.value)
+                setNotes(
+                  e.target.value
+                )
               }
               placeholder="Optional notes"
             />
-
           </label>
-
 
           {err && (
             <div className="notice">
@@ -2749,9 +2898,7 @@ function ExpenseModal({
             </div>
           )}
 
-
           <div className="modal-actions">
-
             <button
               type="button"
               className="secondary"
@@ -2759,7 +2906,6 @@ function ExpenseModal({
             >
               Cancel
             </button>
-
 
             <button
               type="submit"
@@ -2769,28 +2915,21 @@ function ExpenseModal({
                 !persons.length
               }
             >
-
-              {busy
-                ? 'Saving…'
-                : (
-                  <>
-                    <Check />
-                    Save Expense
-                  </>
-                )}
-
+              {busy ? (
+                'Saving…'
+              ) : (
+                <>
+                  <Check />
+                  Save Expense
+                </>
+              )}
             </button>
-
           </div>
-
         </form>
-
       </div>
-
     </div>
   );
 }
-
 
 /* =========================================================
    USERS ICON
@@ -2812,7 +2951,11 @@ function UsersIcon({
       aria-hidden="true"
     >
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
+      <circle
+        cx="9"
+        cy="7"
+        r="4"
+      />
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
