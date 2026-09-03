@@ -1,9 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState
-} from 'react';
-
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   BarChart3,
   Blocks,
@@ -58,9 +53,7 @@ const dateText = v => {
 
   const d = new Date(`${v}T00:00:00`);
 
-  if (Number.isNaN(d.getTime())) {
-    return '—';
-  }
+  if (Number.isNaN(d.getTime())) return '—';
 
   return d.toLocaleDateString('en-IN', {
     day: '2-digit',
@@ -72,16 +65,12 @@ const dateText = v => {
 const sumBy = (a, f) => {
   const m = {};
 
-  (a || []).forEach(x => {
+  a.forEach(x => {
     const k = f(x);
-    m[k] =
-      (m[k] || 0) +
-      Number(x.amount || 0);
+    m[k] = (m[k] || 0) + Number(x.amount || 0);
   });
 
-  return Object.entries(m).sort(
-    (a, b) => b[1] - a[1]
-  );
+  return Object.entries(m).sort((a, b) => b[1] - a[1]);
 };
 
 /* =========================================================
@@ -183,70 +172,44 @@ const categoryAccentMap = {
 };
 
 function categoryKey(category) {
-  return String(
-    category?.name || ''
-  )
-    .trim()
-    .toLowerCase();
+  return String(category?.name || '').trim().toLowerCase();
 }
 
 function categoryIconComponent(category) {
   const key = categoryKey(category);
-
-  return (
-    categoryIconMap[key] ||
-    MoreHorizontal
-  );
+  return categoryIconMap[key] || MoreHorizontal;
 }
 
-function CategoryIcon({
-  category,
-  size = 16
-}) {
-  const Icon =
-    categoryIconComponent(category);
+function CategoryIcon({ category, size = 16 }) {
+  const Icon = categoryIconComponent(category);
 
   const accent =
-    categoryAccentMap[
-      categoryKey(category)
-    ] || 'blue';
+    categoryAccentMap[categoryKey(category)] || 'blue';
 
   return (
     <span
       className={`category-icon category-icon-${accent}`}
       aria-hidden="true"
     >
-      <Icon
-        size={size}
-        strokeWidth={2.15}
-      />
+      <Icon size={size} strokeWidth={2.15} />
     </span>
   );
 }
 
 function categoryLabel(category) {
-  return String(
-    category?.name || 'Other'
-  );
+  return String(category?.name || 'Other');
 }
 
 /* =========================================================
    LOCAL STORAGE
 ========================================================= */
 
-const OWNER_KEY =
-  'dreamhome_owner';
-
-const CREDENTIALS_KEY =
-  'dreamhome_credentials';
+const OWNER_KEY = 'dreamhome_owner';
+const CREDENTIALS_KEY = 'dreamhome_credentials';
 
 function getStoredOwner() {
   try {
-    return (
-      localStorage.getItem(
-        OWNER_KEY
-      ) === 'true'
-    );
+    return localStorage.getItem(OWNER_KEY) === 'true';
   } catch {
     return false;
   }
@@ -255,9 +218,7 @@ function getStoredOwner() {
 function getStoredCredentials() {
   try {
     return JSON.parse(
-      localStorage.getItem(
-        CREDENTIALS_KEY
-      ) || 'null'
+      localStorage.getItem(CREDENTIALS_KEY) || 'null'
     );
   } catch {
     return null;
@@ -269,19 +230,11 @@ function getStoredCredentials() {
 ========================================================= */
 
 export default function App() {
-  const [owner, setOwner] =
-    useState(getStoredOwner);
+  const [owner, setOwner] = useState(getStoredOwner);
 
-  const [setup, setSetup] =
-    useState(null);
-
-  const [boot, setBoot] =
-    useState(true);
-
-  const [
-    installPrompt,
-    setInstallPrompt
-  ] = useState(null);
+  const [setup, setSetup] = useState(null);
+  const [boot, setBoot] = useState(true);
+  const [installPrompt, setInstallPrompt] = useState(null);
 
   useEffect(() => {
     const handler = e => {
@@ -310,7 +263,7 @@ export default function App() {
     try {
       await installPrompt.userChoice;
     } catch {
-      // Ignore install errors.
+      // Ignore install prompt errors.
     }
 
     setInstallPrompt(null);
@@ -321,10 +274,7 @@ export default function App() {
 
     async function checkSetup() {
       try {
-        const {
-          data,
-          error
-        } = await supabase
+        const { data, error } = await supabase
           .from('app_settings')
           .select('owner_username')
           .eq('id', true)
@@ -332,10 +282,7 @@ export default function App() {
 
         if (!active) return;
 
-        setSetup(
-          !error &&
-            !!data?.owner_username
-        );
+        setSetup(!error && !!data?.owner_username);
       } catch {
         if (active) {
           setSetup(false);
@@ -354,12 +301,9 @@ export default function App() {
     };
   }, []);
 
-  /* Keep local login after reopening / returning to app. */
   useEffect(() => {
     const checkLocalLogin = () => {
-      setOwner(
-        getStoredOwner()
-      );
+      setOwner(getStoredOwner());
     };
 
     window.addEventListener(
@@ -411,19 +355,15 @@ export default function App() {
       setOwner={value => {
         setOwner(value);
 
-        try {
-          if (value) {
-            localStorage.setItem(
-              OWNER_KEY,
-              'true'
-            );
-          } else {
-            localStorage.removeItem(
-              OWNER_KEY
-            );
-          }
-        } catch {
-          // Ignore local storage errors.
+        if (value) {
+          localStorage.setItem(
+            OWNER_KEY,
+            'true'
+          );
+        } else {
+          localStorage.removeItem(
+            OWNER_KEY
+          );
         }
       }}
       installPrompt={installPrompt}
@@ -443,261 +383,67 @@ function Dashboard({
   installPrompt,
   installApp
 }) {
-  const [tab, setTab] =
-    useState('dashboard');
+  const [tab, setTab] = useState('dashboard');
 
-  const [expenses, setExpenses] =
-    useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [persons, setPersons] = useState([]);
 
-  const [cats, setCats] =
-    useState([]);
+  const [search, setSearch] = useState('');
+  const [month, setMonth] = useState('all');
 
-  const [persons, setPersons] =
-    useState([]);
+  const [err, setErr] = useState('');
+  const [auth, setAuth] = useState(null);
 
-  const [search, setSearch] =
-    useState('');
-
-  const [month, setMonth] =
-    useState('all');
-
-  const [err, setErr] =
-    useState('');
-
-  const [auth, setAuth] =
-    useState(null);
-
-  const [
-    ownerCred,
-    setOwnerCred
-  ] = useState(
-    getStoredCredentials
-  );
+  const [ownerCred, setOwnerCred] =
+    useState(getStoredCredentials);
 
   /* =======================================================
-     LOAD EXPENSES
-  ======================================================= */
-
-  async function loadExpenses() {
-    const result =
-      await supabase
-        .from('expenses')
-        .select(
-          `
-          *,
-          category:categories(
-            id,
-            name,
-            icon
-          ),
-          person:persons(
-            id,
-            name
-          )
-        `
-        )
-        .order(
-          'expense_date',
-          {
-            ascending: false
-          }
-        );
-
-    if (result.error) {
-      console.error(
-        'Expenses load error:',
-        result.error
-      );
-
-      /*
-       * If the person relationship does not exist,
-       * try loading expenses without the nested
-       * relationship so the application doesn't break.
-       */
-      const fallback =
-        await supabase
-          .from('expenses')
-          .select(
-            `
-            *,
-            category:categories(
-              id,
-              name,
-              icon
-            )
-          `
-          )
-          .order(
-            'expense_date',
-            {
-              ascending: false
-            }
-          );
-
-      if (fallback.error) {
-        console.error(
-          'Expenses fallback error:',
-          fallback.error
-        );
-
-        return {
-          data: [],
-          error:
-            fallback.error
-        };
-      }
-
-      return {
-        data:
-          fallback.data || [],
-        error: null
-      };
-    }
-
-    return {
-      data:
-        result.data || [],
-      error: null
-    };
-  }
-
-  /* =======================================================
-     LOAD CATEGORIES
-  ======================================================= */
-
-  async function loadCategories() {
-    const result =
-      await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-
-    if (result.error) {
-      console.error(
-        'Categories load error:',
-        result.error
-      );
-
-      return {
-        data: [],
-        error: result.error
-      };
-    }
-
-    return {
-      data:
-        result.data || [],
-      error: null
-    };
-  }
-
-  /* =======================================================
-     LOAD PERSONS
-  ======================================================= */
-
-  async function loadPersons() {
-    /*
-     * IMPORTANT:
-     * Only select id and name.
-     *
-     * This avoids depending on any other columns
-     * that may or may not exist in the persons table.
-     */
-    const result =
-      await supabase
-        .from('persons')
-        .select('id,name')
-        .order('name');
-
-    if (result.error) {
-      console.error(
-        'Persons load error:',
-        result.error
-      );
-
-      return {
-        data: [],
-        error: result.error
-      };
-    }
-
-    return {
-      data:
-        result.data || [],
-      error: null
-    };
-  }
-
-  /* =======================================================
-     LOAD ALL DATA
+     LOAD DATA
   ======================================================= */
 
   async function load() {
-    setErr('');
-
     try {
-      const [
-        expensesResult,
-        categoriesResult,
-        personsResult
-      ] = await Promise.all([
-        loadExpenses(),
-        loadCategories(),
-        loadPersons()
+      const [e, c, p] = await Promise.all([
+        supabase
+          .from('expenses')
+          .select(
+            '*,category:categories(id,name,icon),person:persons(id,name)'
+          )
+          .order('expense_date', {
+            ascending: false
+          }),
+
+        supabase
+          .from('categories')
+          .select('*')
+          .order('name'),
+
+        supabase
+          .from('persons')
+          .select('*')
+          .order('name')
       ]);
 
-      setExpenses(
-        expensesResult.data || []
-      );
-
-      setCats(
-        categoriesResult.data || []
-      );
-
-      setPersons(
-        personsResult.data || []
-      );
-
-      const errors = [];
-
-      if (expensesResult.error) {
-        errors.push(
-          `Expenses: ${expensesResult.error.message}`
-        );
-      }
-
-      if (categoriesResult.error) {
-        errors.push(
-          `Categories: ${categoriesResult.error.message}`
-        );
-      }
-
-      if (personsResult.error) {
-        errors.push(
-          `Persons: ${personsResult.error.message}`
-        );
-      }
-
-      if (errors.length) {
+      if (e.error || c.error || p.error) {
         setErr(
-          errors.join(' • ')
+          e.error?.message ||
+            c.error?.message ||
+            p.error?.message ||
+            'Unable to load data.'
         );
-      } else {
-        setErr('');
+
+        return;
       }
+
+      setExpenses(e.data || []);
+      setCats(c.data || []);
+      setPersons(p.data || []);
+      setErr('');
     } catch (error) {
-      console.error(
-        'Data loading error:',
-        error
-      );
-
-      setExpenses([]);
-      setCats([]);
-      setPersons([]);
-
       setErr(
         error?.message ||
-          'Unable to load application data.'
+          'Unable to load data.'
       );
     }
   }
@@ -711,48 +457,34 @@ function Dashboard({
   ======================================================= */
 
   const filtered = useMemo(() => {
-    return (expenses || []).filter(
-      x => {
-        const q =
-          search
-            .toLowerCase()
-            .trim();
+    return expenses.filter(x => {
+      const q = search.toLowerCase().trim();
 
-        const matchesSearch =
-          !q ||
-          String(x.title || '')
-            .toLowerCase()
-            .includes(q) ||
-          String(
-            x.category?.name || ''
-          )
-            .toLowerCase()
-            .includes(q) ||
-          String(
-            x.person?.name ||
-              x.paid_by ||
-              ''
-          )
-            .toLowerCase()
-            .includes(q);
+      const matchesSearch =
+        !q ||
+        String(x.title || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(x.category?.name || '')
+          .toLowerCase()
+          .includes(q) ||
+        String(
+          x.person?.name ||
+            x.paid_by ||
+            ''
+        )
+          .toLowerCase()
+          .includes(q);
 
-        const matchesMonth =
-          month === 'all' ||
-          String(
-            x.expense_date || ''
-          ).startsWith(month);
-
-        return (
-          matchesSearch &&
-          matchesMonth
+      const matchesMonth =
+        month === 'all' ||
+        String(x.expense_date).startsWith(
+          month
         );
-      }
-    );
-  }, [
-    expenses,
-    search,
-    month
-  ]);
+
+      return matchesSearch && matchesMonth;
+    });
+  }, [expenses, search, month]);
 
   /* =======================================================
      TOTALS
@@ -760,12 +492,9 @@ function Dashboard({
 
   const total = useMemo(
     () =>
-      (expenses || []).reduce(
+      expenses.reduce(
         (s, x) =>
-          s +
-          Number(
-            x.amount || 0
-          ),
+          s + Number(x.amount || 0),
         0
       ),
     [expenses]
@@ -799,9 +528,10 @@ function Dashboard({
       sumBy(
         expenses,
         x =>
-          String(
-            x.expense_date || ''
-          ).slice(0, 7)
+          String(x.expense_date).slice(
+            0,
+            7
+          )
       ),
     [expenses]
   );
@@ -814,17 +544,13 @@ function Dashboard({
     setOwner(false);
     setOwnerCred(null);
 
-    try {
-      localStorage.removeItem(
-        OWNER_KEY
-      );
+    localStorage.removeItem(
+      OWNER_KEY
+    );
 
-      localStorage.removeItem(
-        CREDENTIALS_KEY
-      );
-    } catch {
-      // Ignore local storage errors.
-    }
+    localStorage.removeItem(
+      CREDENTIALS_KEY
+    );
 
     setTab('dashboard');
     setAuth(null);
@@ -851,31 +577,35 @@ function Dashboard({
       return;
     }
 
-    const {
-      data,
-      error
-    } = await supabase.rpc(
-      'owner_delete_expense',
-      {
-        p_username:
-          ownerCred.username,
-        p_password:
-          ownerCred.password,
-        p_id: id
-      }
-    );
+    try {
+      const {
+        data,
+        error
+      } = await supabase.rpc(
+        'owner_delete_expense',
+        {
+          p_username:
+            ownerCred.username,
+          p_password:
+            ownerCred.password,
+          p_id: id
+        }
+      );
 
-    if (
-      error ||
-      !data?.ok
-    ) {
+      if (error || !data?.ok) {
+        setErr(
+          error?.message ||
+            data?.message ||
+            'Delete failed'
+        );
+      } else {
+        await load();
+      }
+    } catch (error) {
       setErr(
         error?.message ||
-          data?.message ||
           'Delete failed'
       );
-    } else {
-      await load();
     }
   }
 
@@ -911,9 +641,7 @@ function Dashboard({
         row
           .map(
             value =>
-              `"${String(
-                value
-              ).replaceAll(
+              `"${String(value).replaceAll(
                 '"',
                 '""'
               )}"`
@@ -933,14 +661,11 @@ function Dashboard({
       document.createElement('a');
 
     a.href = url;
-
     a.download =
       'dream-home-expenses.csv';
 
     document.body.appendChild(a);
-
     a.click();
-
     a.remove();
 
     URL.revokeObjectURL(url);
@@ -1046,9 +771,7 @@ function Dashboard({
               t={tab}
               set={setTab}
               v="expenses"
-              i={
-                <ReceiptIndianRupee />
-              }
+              i={<ReceiptIndianRupee />}
             >
               Expenses
             </Nav>
@@ -1141,16 +864,14 @@ function Dashboard({
           )}
 
           {tab === 'persons' && (
-            <PersonsErrorBoundary>
-              <PersonsView
-                persons={persons}
-                expenses={expenses}
-                owner={owner}
-                ownerCred={ownerCred}
-                load={load}
-                setErr={setErr}
-              />
-            </PersonsErrorBoundary>
+            <PersonsView
+              persons={persons}
+              expenses={expenses}
+              owner={owner}
+              ownerCred={ownerCred}
+              load={load}
+              setErr={setErr}
+            />
           )}
         </main>
       </div>
@@ -1158,33 +879,22 @@ function Dashboard({
       {auth === 'login' && (
         <OwnerModal
           mode={
-            setup
-              ? 'login'
-              : 'create'
+            setup ? 'login' : 'create'
           }
-          close={() =>
-            setAuth(null)
-          }
+          close={() => setAuth(null)}
           success={cred => {
             setOwner(true);
-
             setOwnerCred(cred);
 
-            try {
-              localStorage.setItem(
-                OWNER_KEY,
-                'true'
-              );
+            localStorage.setItem(
+              OWNER_KEY,
+              'true'
+            );
 
-              localStorage.setItem(
-                CREDENTIALS_KEY,
-                JSON.stringify(
-                  cred
-                )
-              );
-            } catch {
-              // Ignore local storage errors.
-            }
+            localStorage.setItem(
+              CREDENTIALS_KEY,
+              JSON.stringify(cred)
+            );
 
             setAuth(null);
           }}
@@ -1207,10 +917,8 @@ function Dashboard({
         />
       )}
 
-      {typeof auth ===
-        'object' &&
-        auth?.type ===
-          'expense' && (
+      {typeof auth === 'object' &&
+        auth?.type === 'expense' && (
           <ExpenseModal
             expense={
               auth.expense || null
@@ -1229,90 +937,6 @@ function Dashboard({
         )}
     </>
   );
-}
-
-/* =========================================================
-   PERSONS ERROR BOUNDARY
-========================================================= */
-
-class PersonsErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      hasError: false,
-      message: ''
-    };
-  }
-
-  static getDerivedStateFromError(
-    error
-  ) {
-    return {
-      hasError: true,
-      message:
-        error?.message ||
-        'Unable to display Persons page.'
-    };
-  }
-
-  componentDidCatch(error) {
-    console.error(
-      'Persons page error:',
-      error
-    );
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <section className="card premium-card">
-          <div className="persons-empty">
-            <div className="persons-empty-icon">
-              <UsersIcon size={24} />
-            </div>
-
-            <b>
-              Persons page could not be displayed
-            </b>
-
-            <p>
-              Something went wrong while
-              displaying the family members.
-            </p>
-
-            <small
-              style={{
-                display: 'block',
-                marginTop: 8,
-                opacity: 0.7
-              }}
-            >
-              {this.state.message}
-            </small>
-
-            <button
-              type="button"
-              className="primary"
-              style={{
-                marginTop: 16
-              }}
-              onClick={() =>
-                this.setState({
-                  hasError: false,
-                  message: ''
-                })
-              }
-            >
-              Try Again
-            </button>
-          </div>
-        </section>
-      );
-    }
-
-    return this.props.children;
-  }
 }
 
 /* =========================================================
@@ -1354,9 +978,7 @@ function DashboardView({
             TOTAL SPENDING · ALL MONTHS
           </span>
 
-          <h2>
-            {money(total)}
-          </h2>
+          <h2>{money(total)}</h2>
 
           <p>
             total amount spent
@@ -1365,13 +987,13 @@ function DashboardView({
           <div className="hero-meta">
             <span>
               <Receipt size={14} />
-              {expenses?.length || 0}{' '}
+              {expenses.length}{' '}
               recorded expenses
             </span>
 
             <span>
               <Wallet size={14} />
-              {category?.length || 0}{' '}
+              {category.length}{' '}
               categories
             </span>
           </div>
@@ -1493,8 +1115,7 @@ function ExpensesView({
             <span>Showing</span>
 
             <b>
-              {filtered?.length ||
-                0}
+              {filtered.length}
             </b>
 
             <span>records</span>
@@ -1502,7 +1123,7 @@ function ExpensesView({
 
           <strong>
             {money(
-              (filtered || []).reduce(
+              filtered.reduce(
                 (s, x) =>
                   s +
                   Number(
@@ -1559,9 +1180,9 @@ function SummaryView({
           </strong>
 
           <p>
-            {expenses?.length || 0}{' '}
+            {expenses.length}{' '}
             transactions across{' '}
-            {category?.length || 0}{' '}
+            {category.length}{' '}
             categories
           </p>
         </div>
@@ -1602,7 +1223,7 @@ function SummaryView({
           wide
         >
           <MonthlyBars
-            items={monthly?.slice(
+            items={monthly.slice(
               0,
               8
             )}
@@ -1614,7 +1235,7 @@ function SummaryView({
 }
 
 /* =========================================================
-   PERSONS
+   PERSONS VIEW — CORRECTED
 ========================================================= */
 
 function PersonsView({
@@ -1634,97 +1255,54 @@ function PersonsView({
   const [busy, setBusy] =
     useState(false);
 
-  /* =======================================================
-     PERSON STATISTICS
-  ======================================================= */
+  /*
+   * IMPORTANT:
+   * The old version used {err} inside this
+   * component without declaring it.
+   *
+   * This local error state fixes:
+   * "err is not defined"
+   */
+  const [personErr, setPersonErr] =
+    useState('');
 
   const personStats = useMemo(() => {
-    const safePersons =
-      Array.isArray(persons)
-        ? persons
-        : [];
+    return persons.map(person => {
+      const personExpenses =
+        expenses.filter(
+          expense =>
+            expense.person_id ===
+              person.id ||
+            expense.person?.id ===
+              person.id
+        );
 
-    const safeExpenses =
-      Array.isArray(expenses)
-        ? expenses
-        : [];
+      const total =
+        personExpenses.reduce(
+          (sum, expense) =>
+            sum +
+            Number(
+              expense.amount || 0
+            ),
+          0
+        );
 
-    return safePersons.map(
-      person => {
-        const personExpenses =
-          safeExpenses.filter(
-            expense => {
-              return (
-                String(
-                  expense?.person_id ||
-                    ''
-                ) ===
-                  String(
-                    person?.id || ''
-                  ) ||
-                String(
-                  expense?.person?.id ||
-                    ''
-                ) ===
-                  String(
-                    person?.id || ''
-                  ) ||
-                String(
-                  expense?.paid_by ||
-                    ''
-                )
-                  .trim()
-                  .toLowerCase() ===
-                  String(
-                    person?.name ||
-                      ''
-                  )
-                    .trim()
-                    .toLowerCase()
-              );
-            }
-          );
-
-        const personTotal =
-          personExpenses.reduce(
-            (sum, expense) =>
-              sum +
-              Number(
-                expense?.amount ||
-                  0
-              ),
-            0
-          );
-
-        return {
-          ...person,
-          total: personTotal,
-          count:
-            personExpenses.length
-        };
-      }
-    );
-  }, [
-    persons,
-    expenses
-  ]);
-
-  /* =======================================================
-     GRAND TOTAL
-  ======================================================= */
+      return {
+        ...person,
+        total,
+        count:
+          personExpenses.length
+      };
+    });
+  }, [persons, expenses]);
 
   const grandTotal = useMemo(
     () =>
-      (Array.isArray(
-        expenses
-      )
-        ? expenses
-        : []
-      ).reduce(
+      expenses.reduce(
         (sum, expense) =>
           sum +
           Number(
-            expense?.amount || 0
+            expense.amount || 0
           ),
         0
       ),
@@ -1737,6 +1315,7 @@ function PersonsView({
 
   function startAdd() {
     setErr('');
+    setPersonErr('');
     setName('');
 
     setEditing({
@@ -1750,12 +1329,8 @@ function PersonsView({
 
   function startEdit(person) {
     setErr('');
-
-    setName(
-      String(
-        person?.name || ''
-      )
-    );
+    setPersonErr('');
+    setName(person?.name || '');
 
     setEditing({
       mode: 'edit',
@@ -1768,10 +1343,9 @@ function PersonsView({
   ======================================================= */
 
   function closeModal() {
-    if (busy) return;
-
     setEditing(null);
     setName('');
+    setPersonErr('');
     setBusy(false);
   }
 
@@ -1782,108 +1356,102 @@ function PersonsView({
   async function savePerson(e) {
     e.preventDefault();
 
+    setPersonErr('');
+    setErr('');
+
     if (!ownerCred) {
-      setErr(
+      setPersonErr(
         'Owner session missing. Please login again.'
       );
       return;
     }
 
     const cleanName =
-      String(name || '').trim();
+      name.trim();
 
     if (!cleanName) {
-      setErr(
+      setPersonErr(
         'Please enter a person name.'
       );
       return;
     }
 
-    if (
-      editing?.mode === 'edit' &&
-      !editing?.person?.id
-    ) {
-      setErr(
-        'Invalid person selected.'
-      );
-      return;
-    }
-
     setBusy(true);
-    setErr('');
 
     const isNew =
       editing?.mode === 'new';
 
+    if (
+      !isNew &&
+      !editing?.person?.id
+    ) {
+      setPersonErr(
+        'The selected person could not be identified.'
+      );
+      setBusy(false);
+      return;
+    }
+
+    const rpcName = isNew
+      ? 'owner_add_person'
+      : 'owner_update_person';
+
+    const params = isNew
+      ? {
+          p_username:
+            ownerCred.username,
+
+          p_password:
+            ownerCred.password,
+
+          p_name:
+            cleanName
+        }
+      : {
+          p_username:
+            ownerCred.username,
+
+          p_password:
+            ownerCred.password,
+
+          p_id:
+            editing.person.id,
+
+          p_name:
+            cleanName
+        };
+
     try {
-      let data;
-      let error;
-
-      if (isNew) {
-        const result =
-          await supabase.rpc(
-            'owner_add_person',
-            {
-              p_username:
-                ownerCred.username,
-              p_password:
-                ownerCred.password,
-              p_name: cleanName
-            }
-          );
-
-        data = result.data;
-        error = result.error;
-      } else {
-        const result =
-          await supabase.rpc(
-            'owner_update_person',
-            {
-              p_username:
-                ownerCred.username,
-              p_password:
-                ownerCred.password,
-              p_id:
-                editing.person.id,
-              p_name: cleanName
-            }
-          );
-
-        data = result.data;
-        error = result.error;
-      }
+      const {
+        data,
+        error
+      } = await supabase.rpc(
+        rpcName,
+        params
+      );
 
       if (
         error ||
         !data?.ok
       ) {
-        setErr(
+        setPersonErr(
           error?.message ||
             data?.message ||
             'Unable to save person.'
         );
 
-        setBusy(false);
         return;
       }
 
-      setEditing(null);
-      setName('');
+      closeModal();
 
       await load();
-
-      setBusy(false);
     } catch (error) {
-      console.error(
-        'Save person error:',
-        error
-      );
-
-      setErr(
+      setPersonErr(
         error?.message ||
           'Unable to save person.'
       );
-
+    } finally {
       setBusy(false);
     }
   }
@@ -1892,19 +1460,20 @@ function PersonsView({
      DELETE PERSON
   ======================================================= */
 
-  async function deletePerson(
-    person
-  ) {
+  async function deletePerson(person) {
+    setPersonErr('');
+    setErr('');
+
     if (!ownerCred) {
-      setErr(
+      setPersonErr(
         'Owner session missing. Please login again.'
       );
       return;
     }
 
     if (!person?.id) {
-      setErr(
-        'Invalid person selected.'
+      setPersonErr(
+        'This person could not be identified.'
       );
       return;
     }
@@ -1917,8 +1486,6 @@ function PersonsView({
       return;
     }
 
-    setErr('');
-
     try {
       const {
         data,
@@ -1928,8 +1495,10 @@ function PersonsView({
         {
           p_username:
             ownerCred.username,
+
           p_password:
             ownerCred.password,
+
           p_id: person.id
         }
       );
@@ -1938,32 +1507,21 @@ function PersonsView({
         error ||
         !data?.ok
       ) {
-        setErr(
+        setPersonErr(
           error?.message ||
             data?.message ||
             'Unable to delete person.'
         );
-
-        return;
+      } else {
+        await load();
       }
-
-      await load();
     } catch (error) {
-      console.error(
-        'Delete person error:',
-        error
-      );
-
-      setErr(
+      setPersonErr(
         error?.message ||
           'Unable to delete person.'
       );
     }
   }
-
-  /* =======================================================
-     RENDER
-  ======================================================= */
 
   return (
     <>
@@ -2010,14 +1568,11 @@ function PersonsView({
           <span>PEOPLE</span>
 
           <strong>
-            {Array.isArray(persons)
-              ? persons.length
-              : 0}
+            {persons.length}
           </strong>
 
           <small>
-            {persons?.length ===
-            1
+            {persons.length === 1
               ? 'family member'
               : 'family members'}
           </small>
@@ -2086,8 +1641,7 @@ function PersonsView({
 
                       <div className="person-card-name">
                         <b>
-                          {person.name ||
-                            'Unnamed'}
+                          {person.name}
                         </b>
 
                         <span>
@@ -2214,8 +1768,7 @@ function PersonsView({
           aria-modal="true"
           onMouseDown={e => {
             if (
-              e.target ===
-                e.currentTarget &&
+              e.target === e.currentTarget &&
               !busy
             ) {
               closeModal();
@@ -2286,9 +1839,9 @@ function PersonsView({
                 />
               </label>
 
-              {err && (
+              {personErr && (
                 <div className="notice">
-                  {err}
+                  {personErr}
                 </div>
               )}
 
@@ -2351,7 +1904,9 @@ function Nav({
     >
       {i}
 
-      <span>{children}</span>
+      <span>
+        {children}
+      </span>
     </button>
   );
 }
@@ -2430,15 +1985,10 @@ function CategoryBars({
   items,
   total
 }) {
-  const safeItems =
-    Array.isArray(items)
-      ? items
-      : [];
-
   return (
     <div className="premium-bars">
-      {safeItems.length ? (
-        safeItems.map(
+      {items.length ? (
+        items.map(
           ([name, value]) => {
             const pct = total
               ? Math.round(
@@ -2468,7 +2018,6 @@ function CategoryBars({
 
                   <b>
                     {money(value)}{' '}
-
                     <em>
                       {pct}%
                     </em>
@@ -2506,15 +2055,10 @@ function PersonBars({
   items,
   total
 }) {
-  const safeItems =
-    Array.isArray(items)
-      ? items
-      : [];
-
   return (
     <div className="premium-bars">
-      {safeItems.length ? (
-        safeItems.map(
+      {items.length ? (
+        items.map(
           ([name, value]) => {
             const pct = total
               ? Math.round(
@@ -2543,7 +2087,6 @@ function PersonBars({
 
                   <b>
                     {money(value)}{' '}
-
                     <em>
                       {pct}%
                     </em>
@@ -2580,12 +2123,7 @@ function PersonBars({
 function MonthlyBars({
   items
 }) {
-  const safeItems =
-    Array.isArray(items)
-      ? items
-      : [];
-
-  if (!safeItems.length) {
+  if (!items.length) {
     return (
       <div className="empty">
         No monthly data yet.
@@ -2594,15 +2132,13 @@ function MonthlyBars({
   }
 
   const max = Math.max(
-    ...safeItems.map(
-      x => x[1]
-    ),
+    ...items.map(x => x[1]),
     1
   );
 
   return (
     <div className="monthly-bars">
-      {safeItems
+      {items
         .slice()
         .reverse()
         .map(
@@ -2660,12 +2196,7 @@ function Table({
   edit,
   del
 }) {
-  const safeRows =
-    Array.isArray(rows)
-      ? rows
-      : [];
-
-  if (!safeRows.length) {
+  if (!rows.length) {
     return (
       <div className="empty">
         No expenses found.
@@ -2695,7 +2226,7 @@ function Table({
           </thead>
 
           <tbody>
-            {safeRows.map(x => (
+            {rows.map(x => (
               <tr key={x.id}>
                 <td>
                   {dateText(
@@ -2704,9 +2235,7 @@ function Table({
                 </td>
 
                 <td>
-                  <b>
-                    {x.title}
-                  </b>
+                  <b>{x.title}</b>
 
                   {x.notes && (
                     <small>
@@ -2778,7 +2307,7 @@ function Table({
       </div>
 
       <div className="mobile-expenses">
-        {safeRows.map(x => (
+        {rows.map(x => (
           <article
             className="expense-card"
             key={x.id}
@@ -3069,7 +2598,7 @@ function ExpenseModal({
   const [cat, setCat] =
     useState(
       expense?.category_id ||
-        cats?.[0]?.id ||
+        cats[0]?.id ||
         ''
     );
 
@@ -3119,7 +2648,7 @@ function ExpenseModal({
     }
 
     const selectedPerson =
-      (persons || []).find(
+      persons.find(
         p =>
           String(p.id) ===
           String(paid)
@@ -3205,10 +2734,6 @@ function ExpenseModal({
         data?.expense_id ||
         data?.data?.id;
 
-      /*
-       * Try to obtain the new expense ID if
-       * the RPC doesn't return it.
-       */
       if (!savedExpenseId) {
         const {
           data: latest
@@ -3241,9 +2766,6 @@ function ExpenseModal({
           latest?.[0]?.id;
       }
 
-      /*
-       * Link the person separately.
-       */
       if (savedExpenseId) {
         const {
           error: linkError
@@ -3252,6 +2774,7 @@ function ExpenseModal({
           .update({
             person_id:
               selectedPerson.id,
+
             paid_by:
               selectedPerson.name
           })
@@ -3272,11 +2795,6 @@ function ExpenseModal({
 
       await saved();
     } catch (error) {
-      console.error(
-        'Save expense error:',
-        error
-      );
-
       setErr(
         error?.message ||
           'Save failed.'
@@ -3285,16 +2803,6 @@ function ExpenseModal({
       setBusy(false);
     }
   }
-
-  const safeCats =
-    Array.isArray(cats)
-      ? cats
-      : [];
-
-  const safePersons =
-    Array.isArray(persons)
-      ? persons
-      : [];
 
   return (
     <div className="backdrop">
@@ -3395,7 +2903,7 @@ function ExpenseModal({
                   Select category
                 </option>
 
-                {safeCats.map(c => (
+                {cats.map(c => (
                   <option
                     key={c.id}
                     value={c.id}
@@ -3422,7 +2930,7 @@ function ExpenseModal({
                   Select person
                 </option>
 
-                {safePersons.map(
+                {persons.map(
                   person => (
                     <option
                       key={person.id}
@@ -3438,7 +2946,7 @@ function ExpenseModal({
             </label>
           </div>
 
-          {!safePersons.length && (
+          {!persons.length && (
             <div className="notice">
               No persons have been
               added yet. Please add a
@@ -3483,7 +2991,7 @@ function ExpenseModal({
               className="primary"
               disabled={
                 busy ||
-                !safePersons.length
+                !persons.length
               }
             >
               {busy ? (
