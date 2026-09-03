@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Armchair,
   BarChart3,
   Blocks,
   BookOpen,
@@ -35,7 +34,6 @@ import {
   X,
   Zap
 } from 'lucide-react';
-
 import { supabase } from './supabase';
 
 
@@ -50,14 +48,12 @@ const money = n =>
     maximumFractionDigits: 0
   }).format(Number(n || 0));
 
-
 const dateText = v =>
   new Date(`${v}T00:00:00`).toLocaleDateString('en-IN', {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
   });
-
 
 const sumBy = (a, f) => {
   const m = {};
@@ -94,7 +90,7 @@ const categoryIconMap = {
 
   plumbing: Droplets,
 
-  furniture: Armchair,
+  furniture: Home,
 
   transport: Truck,
   travel: Car,
@@ -121,7 +117,6 @@ const categoryIconMap = {
 
   other: MoreHorizontal
 };
-
 
 const categoryAccentMap = {
   materials: 'blue',
@@ -170,38 +165,28 @@ const categoryAccentMap = {
   other: 'gray'
 };
 
-
 function categoryKey(category) {
-  return String(category?.name || '')
-    .trim()
-    .toLowerCase();
+  return String(category?.name || '').trim().toLowerCase();
 }
-
 
 function categoryIconComponent(category) {
   const key = categoryKey(category);
   return categoryIconMap[key] || MoreHorizontal;
 }
 
-
 function CategoryIcon({ category, size = 16 }) {
   const Icon = categoryIconComponent(category);
-  const accent =
-    categoryAccentMap[categoryKey(category)] || 'blue';
+  const accent = categoryAccentMap[categoryKey(category)] || 'blue';
 
   return (
     <span
       className={`category-icon category-icon-${accent}`}
       aria-hidden="true"
     >
-      <Icon
-        size={size}
-        strokeWidth={2.15}
-      />
+      <Icon size={size} strokeWidth={2.15} />
     </span>
   );
 }
-
 
 function categoryLabel(category) {
   return String(category?.name || 'Other');
@@ -214,16 +199,12 @@ function categoryLabel(category) {
 
 export default function App() {
   const [owner, setOwner] = useState(
-    () =>
-      sessionStorage.getItem('dreamhome_owner') ===
-      'true'
+    () => sessionStorage.getItem('dreamhome_owner') === 'true'
   );
 
   const [setup, setSetup] = useState(null);
   const [boot, setBoot] = useState(true);
-  const [installPrompt, setInstallPrompt] =
-    useState(null);
-
+  const [installPrompt, setInstallPrompt] = useState(null);
 
   useEffect(() => {
     const handler = e => {
@@ -231,19 +212,12 @@ export default function App() {
       setInstallPrompt(e);
     };
 
-    window.addEventListener(
-      'beforeinstallprompt',
-      handler
-    );
+    window.addEventListener('beforeinstallprompt', handler);
 
     return () => {
-      window.removeEventListener(
-        'beforeinstallprompt',
-        handler
-      );
+      window.removeEventListener('beforeinstallprompt', handler);
     };
   }, []);
-
 
   async function installApp() {
     if (!installPrompt) return;
@@ -253,47 +227,33 @@ export default function App() {
     setInstallPrompt(null);
   }
 
-
   useEffect(() => {
     (async () => {
-      const { data, error } =
-        await supabase
-          .from('app_settings')
-          .select('owner_username')
-          .eq('id', true)
-          .single();
+      const { data, error } = await supabase
+        .from('app_settings')
+        .select('owner_username')
+        .eq('id', true)
+        .single();
 
-      setSetup(
-        !error &&
-        !!data?.owner_username
-      );
-
+      setSetup(!error && !!data?.owner_username);
       setBoot(false);
     })();
   }, []);
-
 
   if (boot) {
     return (
       <div className="center splash">
         <div className="splash-card">
-
           <img
             src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
             alt="Dream Home"
           />
-
           <b>Dream Home</b>
-
-          <span>
-            Family Expense Tracker
-          </span>
-
+          <span>Family Expense Tracker</span>
         </div>
       </div>
     );
   }
-
 
   return (
     <Dashboard
@@ -303,14 +263,9 @@ export default function App() {
         setOwner(v);
 
         if (v) {
-          sessionStorage.setItem(
-            'dreamhome_owner',
-            'true'
-          );
+          sessionStorage.setItem('dreamhome_owner', 'true');
         } else {
-          sessionStorage.removeItem(
-            'dreamhome_owner'
-          );
+          sessionStorage.removeItem('dreamhome_owner');
         }
       }}
       installPrompt={installPrompt}
@@ -331,43 +286,27 @@ function Dashboard({
   installPrompt,
   installApp
 }) {
-  const [tab, setTab] =
-    useState('dashboard');
+  const [tab, setTab] = useState('dashboard');
 
-  const [expenses, setExpenses] =
-    useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [persons, setPersons] = useState([]);
 
-  const [cats, setCats] =
-    useState([]);
+  const [search, setSearch] = useState('');
+  const [month, setMonth] = useState('all');
 
-  const [persons, setPersons] =
-    useState([]);
+  const [err, setErr] = useState('');
+  const [auth, setAuth] = useState(null);
 
-  const [search, setSearch] =
-    useState('');
-
-  const [month, setMonth] =
-    useState('all');
-
-  const [err, setErr] =
-    useState('');
-
-  const [auth, setAuth] =
-    useState(null);
-
-
-  const [ownerCred, setOwnerCred] =
-    useState(() => {
-      try {
-        return JSON.parse(
-          sessionStorage.getItem(
-            'dreamhome_credentials'
-          ) || 'null'
-        );
-      } catch {
-        return null;
-      }
-    });
+  const [ownerCred, setOwnerCred] = useState(() => {
+    try {
+      return JSON.parse(
+        sessionStorage.getItem('dreamhome_credentials') || 'null'
+      );
+    } catch {
+      return null;
+    }
+  });
 
 
   /* =======================================================
@@ -375,31 +314,24 @@ function Dashboard({
   ======================================================= */
 
   async function load() {
-    const [e, c, p] =
-      await Promise.all([
-        supabase
-          .from('expenses')
-          .select(
-            '*,category:categories(id,name,icon),person:persons(id,name)'
-          )
-          .order(
-            'expense_date',
-            {
-              ascending: false
-            }
-          ),
+    const [e, c, p] = await Promise.all([
+      supabase
+        .from('expenses')
+        .select(
+          '*,category:categories(id,name,icon),person:persons(id,name)'
+        )
+        .order('expense_date', { ascending: false }),
 
-        supabase
-          .from('categories')
-          .select('*')
-          .order('name'),
+      supabase
+        .from('categories')
+        .select('*')
+        .order('name'),
 
-        supabase
-          .from('persons')
-          .select('*')
-          .order('name')
-      ]);
-
+      supabase
+        .from('persons')
+        .select('*')
+        .order('name')
+    ]);
 
     if (e.error || c.error || p.error) {
       setErr(
@@ -416,7 +348,6 @@ function Dashboard({
     }
   }
 
-
   useEffect(() => {
     load();
   }, []);
@@ -428,52 +359,25 @@ function Dashboard({
 
   const filtered = useMemo(() => {
     return expenses.filter(x => {
-      const q =
-        search
-          .toLowerCase()
-          .trim();
-
+      const q = search.toLowerCase().trim();
 
       const matchesSearch =
         !q ||
-        String(
-          x.title || ''
-        )
-          .toLowerCase()
-          .includes(q) ||
-
-        String(
-          x.category?.name || ''
-        )
-          .toLowerCase()
-          .includes(q) ||
-
+        String(x.title || '').toLowerCase().includes(q) ||
+        String(x.category?.name || '').toLowerCase().includes(q) ||
         String(
           x.person?.name ||
           x.paid_by ||
           ''
-        )
-          .toLowerCase()
-          .includes(q);
-
+        ).toLowerCase().includes(q);
 
       const matchesMonth =
         month === 'all' ||
-        String(
-          x.expense_date
-        ).startsWith(month);
+        String(x.expense_date).startsWith(month);
 
-
-      return (
-        matchesSearch &&
-        matchesMonth
-      );
+      return matchesSearch && matchesMonth;
     });
-  }, [
-    expenses,
-    search,
-    month
-  ]);
+  }, [expenses, search, month]);
 
 
   /* =======================================================
@@ -483,28 +387,20 @@ function Dashboard({
   const total = useMemo(
     () =>
       expenses.reduce(
-        (s, x) =>
-          s +
-          Number(
-            x.amount || 0
-          ),
+        (s, x) => s + Number(x.amount || 0),
         0
       ),
     [expenses]
   );
 
-
   const category = useMemo(
     () =>
       sumBy(
         expenses,
-        x =>
-          x.category?.name ||
-          'Other'
+        x => x.category?.name || 'Other'
       ),
     [expenses]
   );
-
 
   const member = useMemo(
     () =>
@@ -518,15 +414,12 @@ function Dashboard({
     [expenses]
   );
 
-
   const monthly = useMemo(
     () =>
       sumBy(
         expenses,
         x =>
-          String(
-            x.expense_date
-          ).slice(0, 7)
+          String(x.expense_date).slice(0, 7)
       ),
     [expenses]
   );
@@ -564,38 +457,19 @@ function Dashboard({
       return;
     }
 
+    if (!confirm('Delete this expense?')) return;
 
-    if (
-      !confirm(
-        'Delete this expense?'
-      )
-    ) {
-      return;
-    }
-
-
-    const {
-      data,
-      error
-    } =
+    const { data, error } =
       await supabase.rpc(
         'owner_delete_expense',
         {
-          p_username:
-            ownerCred.username,
-
-          p_password:
-            ownerCred.password,
-
+          p_username: ownerCred.username,
+          p_password: ownerCred.password,
           p_id: id
         }
       );
 
-
-    if (
-      error ||
-      !data?.ok
-    ) {
+    if (error || !data?.ok) {
       setErr(
         error?.message ||
         data?.message ||
@@ -627,52 +501,34 @@ function Dashboard({
         x.title,
         x.category?.name || '',
         x.amount,
-        x.person?.name ||
-          x.paid_by ||
-          '',
+        x.person?.name || x.paid_by || '',
         x.notes || ''
       ])
     ];
-
 
     const s = rows
       .map(r =>
         r
           .map(v =>
-            `"${String(v).replaceAll(
-              '"',
-              '""'
-            )}"`
+            `"${String(v).replaceAll('"', '""')}"`
           )
           .join(',')
       )
       .join('\n');
 
+    const a = document.createElement('a');
 
-    const a =
-      document.createElement(
-        'a'
-      );
+    a.href = URL.createObjectURL(
+      new Blob([s], {
+        type: 'text/csv'
+      })
+    );
 
-
-    a.href =
-      URL.createObjectURL(
-        new Blob([s], {
-          type: 'text/csv'
-        })
-      );
-
-
-    a.download =
-      'dream-home-expenses.csv';
-
+    a.download = 'dream-home-expenses.csv';
 
     a.click();
 
-
-    URL.revokeObjectURL(
-      a.href
-    );
+    URL.revokeObjectURL(a.href);
   }
 
 
@@ -683,17 +539,13 @@ function Dashboard({
   return (
     <>
       <header className="topbar">
-
         <div className="brand">
-
           <img
             className="brand-logo"
             src={`${import.meta.env.BASE_URL}logo.svg`}
             alt="Dream Home"
           />
-
         </div>
-
 
         <div className="head-actions">
 
@@ -707,7 +559,6 @@ function Dashboard({
               Install
             </button>
           )}
-
 
           <span
             className={`mode ${
@@ -727,7 +578,6 @@ function Dashboard({
             )}
           </span>
 
-
           {owner ? (
             <button
               className="secondary small"
@@ -740,18 +590,14 @@ function Dashboard({
           ) : (
             <button
               className="primary small"
-              onClick={() =>
-                setAuth('login')
-              }
+              onClick={() => setAuth('login')}
               type="button"
             >
               <Lock size={15} />
               Owner Login
             </button>
           )}
-
         </div>
-
       </header>
 
 
@@ -760,7 +606,6 @@ function Dashboard({
         <aside>
 
           <div className="side-brand">
-
             <img
               src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
               alt=""
@@ -768,11 +613,8 @@ function Dashboard({
 
             <div>
               <b>Dream Home</b>
-              <small>
-                Family finances
-              </small>
+              <small>Family finances</small>
             </div>
-
           </div>
 
 
@@ -787,18 +629,14 @@ function Dashboard({
               Dashboard
             </Nav>
 
-
             <Nav
               t={tab}
               set={setTab}
               v="expenses"
-              i={
-                <ReceiptIndianRupee />
-              }
+              i={<ReceiptIndianRupee />}
             >
               Expenses
             </Nav>
-
 
             <Nav
               t={tab}
@@ -808,7 +646,6 @@ function Dashboard({
             >
               Summary
             </Nav>
-
 
             <Nav
               t={tab}
@@ -829,7 +666,6 @@ function Dashboard({
             </span>
 
             <div>
-
               <b>Cloud synced</b>
 
               <small>
@@ -837,7 +673,6 @@ function Dashboard({
                   ? 'Editing is enabled for this session.'
                   : 'View-only access is active.'}
               </small>
-
             </div>
 
           </div>
@@ -849,20 +684,14 @@ function Dashboard({
 
           {err && (
             <div className="error">
-
-              <span>
-                {err}
-              </span>
+              <span>{err}</span>
 
               <button
-                onClick={() =>
-                  setErr('')
-                }
+                onClick={() => setErr('')}
                 type="button"
               >
                 <X size={15} />
               </button>
-
             </div>
           )}
 
@@ -875,8 +704,6 @@ function Dashboard({
               member={member}
               owner={owner}
               setAuth={setAuth}
-              del={del}
-              setTab={setTab}
             />
           )}
 
@@ -910,6 +737,7 @@ function Dashboard({
           {tab === 'persons' && (
             <PersonsView
               persons={persons}
+              expenses={expenses}
               owner={owner}
               ownerCred={ownerCred}
               load={load}
@@ -918,20 +746,13 @@ function Dashboard({
           )}
 
         </main>
-
       </div>
 
 
       {auth === 'login' && (
         <OwnerModal
-          mode={
-            setup
-              ? 'login'
-              : 'create'
-          }
-          close={() =>
-            setAuth(null)
-          }
+          mode={setup ? 'login' : 'create'}
+          close={() => setAuth(null)}
           success={cred => {
             setOwner(true);
             setOwnerCred(cred);
@@ -952,9 +773,7 @@ function Dashboard({
           expense={null}
           cats={cats}
           persons={persons}
-          close={() =>
-            setAuth(null)
-          }
+          close={() => setAuth(null)}
           saved={async () => {
             setAuth(null);
             await load();
@@ -967,14 +786,10 @@ function Dashboard({
       {typeof auth === 'object' &&
         auth?.type === 'expense' && (
           <ExpenseModal
-            expense={
-              auth.expense || null
-            }
+            expense={auth.expense || null}
             cats={cats}
             persons={persons}
-            close={() =>
-              setAuth(null)
-            }
+            close={() => setAuth(null)}
             saved={async () => {
               setAuth(null);
               await load();
@@ -1010,9 +825,7 @@ function DashboardView({
             <button
               type="button"
               className="primary add-button"
-              onClick={() =>
-                setAuth('expense')
-              }
+              onClick={() => setAuth('expense')}
             >
               <Plus size={17} />
               Add Expense
@@ -1022,8 +835,6 @@ function DashboardView({
       />
 
 
-      {/* ALL-TIME TOTAL */}
-
       <section className="hero-card">
 
         <div className="hero-copy">
@@ -1032,26 +843,20 @@ function DashboardView({
             TOTAL SPENDING · ALL MONTHS
           </span>
 
-          <h2>
-            {money(total)}
-          </h2>
+          <h2>{money(total)}</h2>
 
-          <p>
-            total amount spent
-          </p>
+          <p>total amount spent</p>
 
           <div className="hero-meta">
 
             <span>
               <Receipt size={14} />
-              {expenses.length}{' '}
-              recorded expenses
+              {expenses.length} recorded expenses
             </span>
 
             <span>
               <Wallet size={14} />
-              {category.length}{' '}
-              categories
+              {category.length} categories
             </span>
 
           </div>
@@ -1063,26 +868,20 @@ function DashboardView({
           className="hero-architecture"
           aria-hidden="true"
         >
-
           <div className="hero-house">
-
             <House
               size={88}
               strokeWidth={1.15}
             />
-
           </div>
 
           <div className="hero-rupee">
             ₹
           </div>
-
         </div>
 
       </section>
 
-
-      {/* PERSON CONTRIBUTION */}
 
       <Card
         title="Person-wise Contribution"
@@ -1124,9 +923,7 @@ function ExpensesView({
             <button
               type="button"
               className="primary add-button"
-              onClick={() =>
-                setAuth('expense')
-              }
+              onClick={() => setAuth('expense')}
             >
               <Plus size={17} />
               Add Expense
@@ -1139,41 +936,26 @@ function ExpensesView({
       <div className="expense-toolbar">
 
         <div className="search premium-input">
-
           <Search size={17} />
 
           <input
             placeholder="Search expenses"
             value={search}
-            onChange={e =>
-              setSearch(
-                e.target.value
-              )
-            }
+            onChange={e => setSearch(e.target.value)}
           />
-
         </div>
 
 
         <label className="month-input">
-
           <CalendarDays size={16} />
 
           <input
             type="month"
-            value={
-              month === 'all'
-                ? ''
-                : month
-            }
+            value={month === 'all' ? '' : month}
             onChange={e =>
-              setMonth(
-                e.target.value ||
-                'all'
-              )
+              setMonth(e.target.value || 'all')
             }
           />
-
         </label>
 
 
@@ -1194,29 +976,16 @@ function ExpensesView({
         <div className="result result-premium">
 
           <div>
-
-            <span>
-              Showing
-            </span>
-
-            <b>
-              {filtered.length}
-            </b>
-
-            <span>
-              records
-            </span>
-
+            <span>Showing</span>
+            <b>{filtered.length}</b>
+            <span>records</span>
           </div>
 
           <strong>
             {money(
               filtered.reduce(
                 (s, x) =>
-                  s +
-                  Number(
-                    x.amount || 0
-                  ),
+                  s + Number(x.amount || 0),
                 0
               )
             )}
@@ -1238,7 +1007,6 @@ function ExpensesView({
         />
 
       </Card>
-
     </>
   );
 }
@@ -1276,23 +1044,16 @@ function SummaryView({
           </strong>
 
           <p>
-            {expenses.length}{' '}
-            transactions across{' '}
-            {category.length}{' '}
-            categories
+            {expenses.length} transactions across{' '}
+            {category.length} categories
           </p>
 
         </div>
 
 
         <div className="summary-badge">
-
           <BarChart3 size={20} />
-
-          <span>
-            Financial overview
-          </span>
-
+          <span>Financial overview</span>
         </div>
 
       </section>
@@ -1333,7 +1094,6 @@ function SummaryView({
         </Card>
 
       </div>
-
     </>
   );
 }
@@ -1345,19 +1105,49 @@ function SummaryView({
 
 function PersonsView({
   persons,
+  expenses,
   owner,
   ownerCred,
   load,
   setErr
 }) {
-  const [editing, setEditing] =
-    useState(null);
+  const [editing, setEditing] = useState(null);
+  const [name, setName] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  const [name, setName] =
-    useState('');
 
-  const [busy, setBusy] =
-    useState(false);
+  const personStats = useMemo(() => {
+    return persons.map(person => {
+      const personExpenses = expenses.filter(
+        expense =>
+          expense.person_id === person.id ||
+          expense.person?.id === person.id
+      );
+
+      const total = personExpenses.reduce(
+        (sum, expense) =>
+          sum + Number(expense.amount || 0),
+        0
+      );
+
+      return {
+        ...person,
+        total,
+        count: personExpenses.length
+      };
+    });
+  }, [persons, expenses]);
+
+
+  const grandTotal = useMemo(
+    () =>
+      expenses.reduce(
+        (sum, expense) =>
+          sum + Number(expense.amount || 0),
+        0
+      ),
+    [expenses]
+  );
 
 
   function startAdd() {
@@ -1369,7 +1159,7 @@ function PersonsView({
 
   function startEdit(person) {
     setEditing(person);
-    setName(person.name);
+    setName(person.name || '');
     setErr('');
   }
 
@@ -1383,7 +1173,6 @@ function PersonsView({
   async function savePerson(e) {
     e.preventDefault();
 
-
     if (!ownerCred) {
       setErr(
         'Owner session missing. Please login again.'
@@ -1391,58 +1180,34 @@ function PersonsView({
       return;
     }
 
-
-    const cleanName =
-      name.trim();
-
+    const cleanName = name.trim();
 
     if (!cleanName) {
-      setErr(
-        'Please enter a person name.'
-      );
+      setErr('Please enter a person name.');
       return;
     }
-
 
     setBusy(true);
     setErr('');
 
+    const isNew = editing === 'new';
 
-    const isNew =
-      editing === 'new';
-
-
-    const rpcName =
-      isNew
-        ? 'owner_add_person'
-        : 'owner_update_person';
-
+    const rpcName = isNew
+      ? 'owner_add_person'
+      : 'owner_update_person';
 
     const params = isNew
       ? {
-          p_username:
-            ownerCred.username,
-
-          p_password:
-            ownerCred.password,
-
-          p_name:
-            cleanName
+          p_username: ownerCred.username,
+          p_password: ownerCred.password,
+          p_name: cleanName
         }
       : {
-          p_username:
-            ownerCred.username,
-
-          p_password:
-            ownerCred.password,
-
-          p_id:
-            editing.id,
-
-          p_name:
-            cleanName
+          p_username: ownerCred.username,
+          p_password: ownerCred.password,
+          p_id: editing.id,
+          p_name: cleanName
         };
-
 
     const {
       data,
@@ -1452,11 +1217,7 @@ function PersonsView({
       params
     );
 
-
-    if (
-      error ||
-      !data?.ok
-    ) {
+    if (error || !data?.ok) {
       setErr(
         error?.message ||
         data?.message ||
@@ -1466,7 +1227,6 @@ function PersonsView({
       closeModal();
       await load();
     }
-
 
     setBusy(false);
   }
@@ -1480,7 +1240,6 @@ function PersonsView({
       return;
     }
 
-
     if (
       !confirm(
         `Delete "${person.name}"?`
@@ -1489,29 +1248,19 @@ function PersonsView({
       return;
     }
 
-
     const {
       data,
       error
     } = await supabase.rpc(
       'owner_delete_person',
       {
-        p_username:
-          ownerCred.username,
-
-        p_password:
-          ownerCred.password,
-
-        p_id:
-          person.id
+        p_username: ownerCred.username,
+        p_password: ownerCred.password,
+        p_id: person.id
       }
     );
 
-
-    if (
-      error ||
-      !data?.ok
-    ) {
+    if (error || !data?.ok) {
       setErr(
         error?.message ||
         data?.message ||
@@ -1543,88 +1292,212 @@ function PersonsView({
       />
 
 
+      <section className="persons-overview">
+
+        <div className="persons-overview-main">
+
+          <div className="persons-overview-icon">
+            <UsersIcon size={22} />
+          </div>
+
+          <div>
+            <span className="eyebrow-dark">
+              FAMILY CONTRIBUTION
+            </span>
+
+            <strong>
+              {money(grandTotal)}
+            </strong>
+
+            <p>
+              Total spending recorded across all persons
+            </p>
+          </div>
+
+        </div>
+
+
+        <div className="persons-count">
+
+          <span>PEOPLE</span>
+
+          <strong>{persons.length}</strong>
+
+          <small>
+            {persons.length === 1
+              ? 'family member'
+              : 'family members'}
+          </small>
+
+        </div>
+
+      </section>
+
+
       <Card
         title="Family Members"
-        subtitle="Use these names when recording expenses."
+        subtitle="People available in the Paid By selector"
       >
 
-        {!persons.length ? (
-          <div className="empty">
-            No persons added yet.
-          </div>
-        ) : (
-          <div className="persons-list">
+        {!personStats.length ? (
 
-            {persons.map(person => (
+          <div className="persons-empty">
 
-              <div
-                className="person-row"
-                key={person.id}
+            <div className="persons-empty-icon">
+              <UsersIcon size={24} />
+            </div>
+
+            <b>No persons added yet</b>
+
+            <p>
+              Add family members here so their names
+              can be selected while recording expenses.
+            </p>
+
+            {owner && (
+              <button
+                type="button"
+                className="primary"
+                onClick={startAdd}
               >
+                <Plus size={15} />
+                Add First Person
+              </button>
+            )}
 
-                <div className="person-info">
+          </div>
 
-                  <span className="person-avatar">
-                    {String(
-                      person.name ||
-                      '?'
+        ) : (
+
+          <div className="persons-grid">
+
+            {personStats.map(person => {
+
+              const percentage =
+                grandTotal > 0
+                  ? Math.round(
+                      (person.total / grandTotal) * 100
                     )
-                      .slice(0, 1)
-                      .toUpperCase()}
-                  </span>
+                  : 0;
+
+              return (
+                <article
+                  className="person-card"
+                  key={person.id}
+                >
+
+                  <div className="person-card-head">
+
+                    <div className="person-avatar-large">
+                      {String(
+                        person.name || '?'
+                      )
+                        .slice(0, 1)
+                        .toUpperCase()}
+                    </div>
+
+                    <div className="person-card-name">
+                      <b>{person.name}</b>
+
+                      <span>
+                        {person.count === 0
+                          ? 'No expenses yet'
+                          : `${person.count} ${
+                              person.count === 1
+                                ? 'expense'
+                                : 'expenses'
+                            }`}
+                      </span>
+                    </div>
 
 
-                  <div>
+                    {owner && (
+                      <div className="person-card-menu">
 
-                    <b>
-                      {person.name}
-                    </b>
+                        <button
+                          className="icon"
+                          type="button"
+                          title="Edit person"
+                          onClick={() =>
+                            startEdit(person)
+                          }
+                        >
+                          <Edit3 size={15} />
+                        </button>
 
-                    <small>
-                      Available for expense entries
-                    </small>
+                        <button
+                          className="icon danger"
+                          type="button"
+                          title="Delete person"
+                          onClick={() =>
+                            deletePerson(person)
+                          }
+                        >
+                          <Trash2 size={15} />
+                        </button>
+
+                      </div>
+                    )}
 
                   </div>
 
-                </div>
 
+                  <div className="person-card-total">
 
-                {owner && (
-                  <div className="person-actions">
+                    <span>Total contribution</span>
 
-                    <button
-                      className="icon action-edit"
-                      type="button"
-                      title="Edit"
-                      onClick={() =>
-                        startEdit(
-                          person
-                        )
-                      }
-                    >
-                      <Edit3 size={15} />
-                    </button>
-
-
-                    <button
-                      className="icon danger"
-                      type="button"
-                      title="Delete"
-                      onClick={() =>
-                        deletePerson(
-                          person
-                        )
-                      }
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    <strong>
+                      {money(person.total)}
+                    </strong>
 
                   </div>
-                )}
 
-              </div>
 
-            ))}
+                  <div className="person-progress">
+
+                    <div className="person-progress-head">
+                      <span>Contribution</span>
+
+                      <b>
+                        {percentage}%
+                      </b>
+                    </div>
+
+                    <div className="person-progress-track">
+
+                      <span
+                        style={{
+                          width: `${Math.max(
+                            percentage,
+                            person.total > 0 ? 2 : 0
+                          )}%`
+                        }}
+                      />
+
+                    </div>
+
+                  </div>
+
+
+                  <div className="person-card-footer">
+
+                    <span>
+                      <Receipt size={13} />
+                      {person.count}{' '}
+                      {person.count === 1
+                        ? 'record'
+                        : 'records'}
+                    </span>
+
+                    <span>
+                      {percentage}% of total
+                    </span>
+
+                  </div>
+
+                </article>
+              );
+            })}
 
           </div>
         )}
@@ -1635,27 +1508,35 @@ function PersonsView({
       {editing && (
         <div className="backdrop">
 
-          <div className="modal">
+          <div className="modal person-modal">
 
             <div className="modal-head">
 
-              <div>
+              <div className="modal-title-with-icon">
 
-                <div className="page-kicker">
-                  DREAM HOME
+                <div className="modal-person-icon">
+                  <UsersIcon size={19} />
                 </div>
 
-                <h2>
-                  {editing === 'new'
-                    ? 'Add Person'
-                    : 'Edit Person'}
-                </h2>
+                <div>
 
-                <p>
-                  {editing === 'new'
-                    ? 'Add a person who can be selected when recording expenses.'
-                    : "Update the person's name."}
-                </p>
+                  <div className="page-kicker">
+                    DREAM HOME
+                  </div>
+
+                  <h2>
+                    {editing === 'new'
+                      ? 'Add Person'
+                      : 'Edit Person'}
+                  </h2>
+
+                  <p>
+                    {editing === 'new'
+                      ? 'Add a person who can be selected when recording expenses.'
+                      : "Update the person's name."}
+                  </p>
+
+                </div>
 
               </div>
 
@@ -1684,14 +1565,19 @@ function PersonsView({
                   required
                   value={name}
                   onChange={e =>
-                    setName(
-                      e.target.value
-                    )
+                    setName(e.target.value)
                   }
                   placeholder="Enter person's name"
                 />
 
               </label>
+
+
+              {err && (
+                <div className="notice">
+                  {err}
+                </div>
+              )}
 
 
               <div className="modal-actions">
@@ -1775,19 +1661,13 @@ function Head({
     <div className="page-head">
 
       <div>
-
         <div className="page-kicker">
           DREAM HOME
         </div>
 
-        <h1>
-          {title}
-        </h1>
+        <h1>{title}</h1>
 
-        <p>
-          {sub}
-        </p>
-
+        <p>{sub}</p>
       </div>
 
       {action}
@@ -1821,9 +1701,7 @@ function Card({
           <div>
 
             {title && (
-              <b>
-                {title}
-              </b>
+              <b>{title}</b>
             )}
 
             {subtitle && (
@@ -1864,12 +1742,9 @@ function CategoryBars({
             const pct =
               total
                 ? Math.round(
-                    (value /
-                      total) *
-                      100
+                    (value / total) * 100
                   )
                 : 0;
-
 
             return (
               <div
@@ -1882,9 +1757,7 @@ function CategoryBars({
                   <div className="premium-label">
 
                     <CategoryIcon
-                      category={{
-                        name
-                      }}
+                      category={{ name }}
                       size={15}
                     />
 
@@ -1952,12 +1825,9 @@ function PersonBars({
             const pct =
               total
                 ? Math.round(
-                    (value /
-                      total) *
-                      100
+                    (value / total) * 100
                   )
                 : 0;
-
 
             return (
               <div
@@ -2036,15 +1906,10 @@ function MonthlyBars({
     );
   }
 
-
-  const max =
-    Math.max(
-      ...items.map(
-        x => x[1]
-      ),
-      1
-    );
-
+  const max = Math.max(
+    ...items.map(x => x[1]),
+    1
+  );
 
   return (
     <div className="monthly-bars">
@@ -2052,55 +1917,46 @@ function MonthlyBars({
       {items
         .slice()
         .reverse()
-        .map(
-          ([name, value]) => {
+        .map(([name, value]) => {
 
-            const label =
-              new Date(
-                `${name}-01T00:00:00`
-              ).toLocaleDateString(
-                'en-IN',
-                {
-                  month: 'short'
-                }
-              );
+          const label =
+            new Date(
+              `${name}-01T00:00:00`
+            ).toLocaleDateString(
+              'en-IN',
+              {
+                month: 'short'
+              }
+            );
 
+          return (
+            <div
+              className="month-column"
+              key={name}
+            >
 
-            return (
-              <div
-                className="month-column"
-                key={name}
-              >
+              <div className="month-value">
+                {money(value)}
+              </div>
 
-                <div className="month-value">
-                  {money(value)}
-                </div>
+              <div className="month-bar">
 
-
-                <div className="month-bar">
-
-                  <span
-                    style={{
-                      height: `${Math.max(
-                        (value /
-                          max) *
-                          100,
-                        7
-                      )}%`
-                    }}
-                  />
-
-                </div>
-
-
-                <small>
-                  {label}
-                </small>
+                <span
+                  style={{
+                    height: `${Math.max(
+                      (value / max) * 100,
+                      7
+                    )}%`
+                  }}
+                />
 
               </div>
-            );
-          }
-        )}
+
+              <small>{label}</small>
+
+            </div>
+          );
+        })}
 
     </div>
   );
@@ -2125,7 +1981,6 @@ function Table({
     );
   }
 
-
   return (
     <>
       <div className="table-wrap desktop-table">
@@ -2135,22 +1990,10 @@ function Table({
           <thead>
 
             <tr>
-
-              <th>
-                Date
-              </th>
-
-              <th>
-                Expense
-              </th>
-
-              <th>
-                Category
-              </th>
-
-              <th>
-                Paid By
-              </th>
+              <th>Date</th>
+              <th>Expense</th>
+              <th>Category</th>
+              <th>Paid By</th>
 
               <th className="right">
                 Amount
@@ -2174,24 +2017,18 @@ function Table({
               <tr key={x.id}>
 
                 <td>
-                  {dateText(
-                    x.expense_date
-                  )}
+                  {dateText(x.expense_date)}
                 </td>
 
 
                 <td>
-
-                  <b>
-                    {x.title}
-                  </b>
+                  <b>{x.title}</b>
 
                   {x.notes && (
                     <small>
                       {x.notes}
                     </small>
                   )}
-
                 </td>
 
 
@@ -2200,15 +2037,11 @@ function Table({
                   <span className="category-chip">
 
                     <CategoryIcon
-                      category={
-                        x.category
-                      }
+                      category={x.category}
                       size={15}
                     />
 
-                    {categoryLabel(
-                      x.category
-                    )}
+                    {categoryLabel(x.category)}
 
                   </span>
 
@@ -2223,9 +2056,7 @@ function Table({
 
 
                 <td className="right amount">
-                  {money(
-                    x.amount
-                  )}
+                  {money(x.amount)}
                 </td>
 
 
@@ -2234,9 +2065,7 @@ function Table({
 
                     <button
                       className="icon action-edit"
-                      onClick={() =>
-                        edit(x)
-                      }
+                      onClick={() => edit(x)}
                       type="button"
                       title="Edit"
                     >
@@ -2246,9 +2075,7 @@ function Table({
 
                     <button
                       className="icon danger"
-                      onClick={() =>
-                        del(x.id)
-                      }
+                      onClick={() => del(x.id)}
                       type="button"
                       title="Delete"
                     >
@@ -2281,32 +2108,23 @@ function Table({
             <div className="expense-card-top">
 
               <CategoryIcon
-                category={
-                  x.category
-                }
+                category={x.category}
                 size={17}
               />
 
-
               <div className="expense-card-title">
 
-                <b>
-                  {x.title}
-                </b>
+                <b>{x.title}</b>
 
                 <span>
-                  {dateText(
-                    x.expense_date
-                  )}
+                  {dateText(x.expense_date)}
                 </span>
 
               </div>
 
 
               <strong>
-                {money(
-                  x.amount
-                )}
+                {money(x.amount)}
               </strong>
 
             </div>
@@ -2315,9 +2133,7 @@ function Table({
             <div className="expense-card-meta">
 
               <span>
-                {categoryLabel(
-                  x.category
-                )}
+                {categoryLabel(x.category)}
               </span>
 
               <span>
@@ -2344,9 +2160,7 @@ function Table({
 
                 <button
                   className="mobile-action edit-mobile"
-                  onClick={() =>
-                    edit(x)
-                  }
+                  onClick={() => edit(x)}
                   type="button"
                 >
                   <Edit3 size={14} />
@@ -2356,9 +2170,7 @@ function Table({
 
                 <button
                   className="mobile-action delete-mobile"
-                  onClick={() =>
-                    del(x.id)
-                  }
+                  onClick={() => del(x.id)}
                   type="button"
                 >
                   <Trash2 size={14} />
@@ -2387,17 +2199,10 @@ function OwnerModal({
   close,
   success
 }) {
-  const [u, setU] =
-    useState('');
-
-  const [p, setP] =
-    useState('');
-
-  const [busy, setBusy] =
-    useState(false);
-
-  const [err, setErr] =
-    useState('');
+  const [u, setU] = useState('');
+  const [p, setP] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
 
 
   async function go(e) {
@@ -2406,33 +2211,23 @@ function OwnerModal({
     setBusy(true);
     setErr('');
 
-
     const fn =
       mode === 'create'
         ? 'owner_create'
         : 'owner_login';
 
-
     const {
       data,
       error
-    } =
-      await supabase.rpc(
-        fn,
-        {
-          p_username:
-            u.trim(),
+    } = await supabase.rpc(
+      fn,
+      {
+        p_username: u.trim(),
+        p_password: p
+      }
+    );
 
-          p_password:
-            p
-        }
-      );
-
-
-    if (
-      error ||
-      !data?.ok
-    ) {
+    if (error || !data?.ok) {
       setErr(
         error?.message ||
         data?.message ||
@@ -2442,11 +2237,9 @@ function OwnerModal({
       success({
         username:
           u.trim().toLowerCase(),
-
         password: p
       });
     }
-
 
     setBusy(false);
   }
@@ -2506,15 +2299,12 @@ function OwnerModal({
         >
 
           <label>
-
             Username
 
             <input
               value={u}
               onChange={e =>
-                setU(
-                  e.target.value
-                )
+                setU(e.target.value)
               }
               autoCapitalize="none"
               required
@@ -2525,16 +2315,13 @@ function OwnerModal({
 
 
           <label>
-
             Password
 
             <input
               type="password"
               value={p}
               onChange={e =>
-                setP(
-                  e.target.value
-                )
+                setP(e.target.value)
               }
               minLength={8}
               required
@@ -2599,12 +2386,8 @@ function ExpenseModal({
         .slice(0, 10)
     );
 
-
   const [title, setTitle] =
-    useState(
-      expense?.title || ''
-    );
-
+    useState(expense?.title || '');
 
   const [cat, setCat] =
     useState(
@@ -2613,40 +2396,24 @@ function ExpenseModal({
       ''
     );
 
-
   const [amount, setAmount] =
-    useState(
-      expense?.amount || ''
-    );
-
+    useState(expense?.amount || '');
 
   const [paid, setPaid] =
-    useState(
-      expense?.person_id || ''
-    );
-
+    useState(expense?.person_id || '');
 
   const [notes, setNotes] =
-    useState(
-      expense?.notes || ''
-    );
-
+    useState(expense?.notes || '');
 
   const [busy, setBusy] =
     useState(false);
-
 
   const [err, setErr] =
     useState('');
 
 
-  /* =======================================================
-     SAVE EXPENSE
-  ======================================================= */
-
   async function save(e) {
     e.preventDefault();
-
 
     if (!ownerCred) {
       setErr(
@@ -2655,14 +2422,12 @@ function ExpenseModal({
       return;
     }
 
-
     if (!cat) {
       setErr(
         'Please select a category.'
       );
       return;
     }
-
 
     if (!paid) {
       setErr(
@@ -2671,12 +2436,10 @@ function ExpenseModal({
       return;
     }
 
-
     const selectedPerson =
       persons.find(
         p => p.id === paid
       );
-
 
     if (!selectedPerson) {
       setErr(
@@ -2685,80 +2448,38 @@ function ExpenseModal({
       return;
     }
 
-
-    if (!title.trim()) {
-      setErr(
-        'Please enter the expense name.'
-      );
-      return;
-    }
-
-
-    if (
-      !amount ||
-      Number(amount) <= 0
-    ) {
-      setErr(
-        'Please enter a valid amount.'
-      );
-      return;
-    }
-
-
     setBusy(true);
     setErr('');
 
-
     const args = {
-      p_username:
-        ownerCred.username,
-
-      p_password:
-        ownerCred.password,
-
-      p_expense_date:
-        date,
-
-      p_title:
-        title.trim(),
-
-      p_category_id:
-        cat,
-
-      p_amount:
-        Number(amount),
-
-      p_paid_by:
-        selectedPerson.name,
-
-      p_notes:
-        notes.trim() || null
+      p_username: ownerCred.username,
+      p_password: ownerCred.password,
+      p_expense_date: date,
+      p_title: title.trim(),
+      p_category_id: cat,
+      p_amount: Number(amount),
+      p_paid_by: selectedPerson.name,
+      p_notes: notes.trim() || null
     };
 
 
     const {
       data,
       error
-    } =
-      await supabase.rpc(
-        expense
-          ? 'owner_update_expense'
-          : 'owner_add_expense',
-
-        expense
-          ? {
-              ...args,
-              p_id:
-                expense.id
-            }
-          : args
-      );
+    } = await supabase.rpc(
+      expense
+        ? 'owner_update_expense'
+        : 'owner_add_expense',
+      expense
+        ? {
+            ...args,
+            p_id: expense.id
+          }
+        : args
+    );
 
 
-    if (
-      error ||
-      !data?.ok
-    ) {
+    if (error || !data?.ok) {
       setErr(
         error?.message ||
         data?.message ||
@@ -2770,11 +2491,6 @@ function ExpenseModal({
     }
 
 
-    /*
-      Get the saved expense ID if the RPC
-      returns one.
-    */
-
     let savedExpenseId =
       expense?.id ||
       data?.id ||
@@ -2782,74 +2498,56 @@ function ExpenseModal({
       data?.data?.id;
 
 
-    /*
-      For a new expense, some existing RPC
-      versions may not return an ID.
-
-      We therefore try to locate the newly
-      saved record without depending on a
-      created_at column.
-    */
-
     if (!savedExpenseId) {
 
       const {
         data: latest
-      } =
-        await supabase
-          .from('expenses')
-          .select(
-            'id,expense_date,title,amount'
-          )
-          .eq(
-            'expense_date',
-            date
-          )
-          .eq(
-            'title',
-            title.trim()
-          )
-          .eq(
-            'amount',
-            Number(amount)
-          )
-          .order(
-            'id',
-            {
-              ascending: false
-            }
-          )
-          .limit(1);
-
+      } = await supabase
+        .from('expenses')
+        .select(
+          'id,expense_date,title,amount'
+        )
+        .eq(
+          'expense_date',
+          date
+        )
+        .eq(
+          'title',
+          title.trim()
+        )
+        .eq(
+          'amount',
+          Number(amount)
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        )
+        .limit(1);
 
       savedExpenseId =
         latest?.[0]?.id;
     }
 
 
-    /*
-      Link the expense to the selected person.
-    */
-
     if (savedExpenseId) {
 
       const {
         error: linkError
-      } =
-        await supabase
-          .from('expenses')
-          .update({
-            person_id:
-              selectedPerson.id,
-
-            paid_by:
-              selectedPerson.name
-          })
-          .eq(
-            'id',
-            savedExpenseId
-          );
-
+      } = await supabase
+        .from('expenses')
+        .update({
+          person_id:
+            selectedPerson.id,
+          paid_by:
+            selectedPerson.name
+        })
+        .eq(
+          'id',
+          savedExpenseId
+        );
 
       if (linkError) {
         setErr(
@@ -2913,7 +2611,6 @@ function ExpenseModal({
           <div className="grid">
 
             <label>
-
               Date
 
               <input
@@ -2921,9 +2618,7 @@ function ExpenseModal({
                 required
                 value={date}
                 onChange={e =>
-                  setDate(
-                    e.target.value
-                  )
+                  setDate(e.target.value)
                 }
               />
 
@@ -2931,7 +2626,6 @@ function ExpenseModal({
 
 
             <label>
-
               Amount (₹)
 
               <input
@@ -2941,9 +2635,7 @@ function ExpenseModal({
                 required
                 value={amount}
                 onChange={e =>
-                  setAmount(
-                    e.target.value
-                  )
+                  setAmount(e.target.value)
                 }
               />
 
@@ -2953,16 +2645,13 @@ function ExpenseModal({
 
 
           <label>
-
             Expense / Item
 
             <input
               required
               value={title}
               onChange={e =>
-                setTitle(
-                  e.target.value
-                )
+                setTitle(e.target.value)
               }
               placeholder="e.g. Cement, tiles"
             />
@@ -2973,15 +2662,12 @@ function ExpenseModal({
           <div className="grid">
 
             <label>
-
               Category
 
               <select
                 value={cat}
                 onChange={e =>
-                  setCat(
-                    e.target.value
-                  )
+                  setCat(e.target.value)
                 }
                 required
               >
@@ -3005,15 +2691,12 @@ function ExpenseModal({
 
 
             <label>
-
               Paid By
 
               <select
                 value={paid}
                 onChange={e =>
-                  setPaid(
-                    e.target.value
-                  )
+                  setPaid(e.target.value)
                 }
                 required
               >
@@ -3046,16 +2729,13 @@ function ExpenseModal({
 
 
           <label>
-
             Notes
 
             <textarea
               rows="3"
               value={notes}
               onChange={e =>
-                setNotes(
-                  e.target.value
-                )
+                setNotes(e.target.value)
               }
               placeholder="Optional notes"
             />
@@ -3131,19 +2811,10 @@ function UsersIcon({
       strokeLinejoin="round"
       aria-hidden="true"
     >
-
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-
-      <circle
-        cx="9"
-        cy="7"
-        r="4"
-      />
-
+      <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-
     </svg>
   );
 }
