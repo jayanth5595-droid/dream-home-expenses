@@ -43,6 +43,11 @@ import {
 } from 'lucide-react';
 import { supabase } from './supabase';
 
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
 const money = n =>
   new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -59,55 +64,112 @@ const dateText = v =>
 
 const sumBy = (a, f) => {
   const m = {};
+
   a.forEach(x => {
     const k = f(x);
-    m[k] = (m[k] || 0) + Number(x.amount);
+    m[k] = (m[k] || 0) + Number(x.amount || 0);
   });
+
   return Object.entries(m).sort((a, b) => b[1] - a[1]);
 };
+
+
+/* =========================================================
+   CATEGORY ICONS
+========================================================= */
 
 const categoryIconMap = {
   materials: Blocks,
   material: Blocks,
   cement: Blocks,
   bricks: Blocks,
+
   labour: HardHat,
   labor: HardHat,
   mason: HardHat,
   masonry: HardHat,
+
   payments: CreditCard,
   payment: CreditCard,
+
   electrical: Zap,
   electricity: Zap,
+
   plumbing: Droplets,
+
   furniture: Armchair,
+
   transport: Truck,
   travel: Car,
+
   food: Utensils,
+
   groceries: ShoppingBag,
   grocery: ShoppingBag,
   shopping: ShoppingBag,
+
   household: House,
   home: House,
+
   appliances: Refrigerator,
+
   tools: Wrench,
+
   medical: HeartPulse,
   health: HeartPulse,
+
   education: BookOpen,
+
   receipt: Receipt,
+
   other: MoreHorizontal
 };
 
 const categoryAccentMap = {
-  materials: 'blue', material: 'blue', cement: 'blue', bricks: 'blue',
-  labour: 'green', labor: 'green', mason: 'green', masonry: 'green',
-  payments: 'indigo', payment: 'indigo',
-  electrical: 'amber', electricity: 'amber',
-  plumbing: 'cyan', furniture: 'violet',
-  transport: 'orange', travel: 'orange',
-  food: 'rose', groceries: 'pink', grocery: 'pink', shopping: 'pink',
-  household: 'slate', home: 'slate', appliances: 'sky', tools: 'gray',
-  medical: 'red', health: 'red', education: 'purple', receipt: 'indigo', other: 'gray'
+  materials: 'blue',
+  material: 'blue',
+  cement: 'blue',
+  bricks: 'blue',
+
+  labour: 'green',
+  labor: 'green',
+  mason: 'green',
+  masonry: 'green',
+
+  payments: 'indigo',
+  payment: 'indigo',
+
+  electrical: 'amber',
+  electricity: 'amber',
+
+  plumbing: 'cyan',
+
+  furniture: 'violet',
+
+  transport: 'orange',
+  travel: 'orange',
+
+  food: 'rose',
+
+  groceries: 'pink',
+  grocery: 'pink',
+  shopping: 'pink',
+
+  household: 'slate',
+  home: 'slate',
+
+  appliances: 'sky',
+
+  tools: 'gray',
+
+  medical: 'red',
+  health: 'red',
+
+  education: 'purple',
+
+  receipt: 'indigo',
+
+  other: 'gray'
 };
 
 function categoryKey(category) {
@@ -122,8 +184,12 @@ function categoryIconComponent(category) {
 function CategoryIcon({ category, size = 16 }) {
   const Icon = categoryIconComponent(category);
   const accent = categoryAccentMap[categoryKey(category)] || 'blue';
+
   return (
-    <span className={`category-icon category-icon-${accent}`} aria-hidden="true">
+    <span
+      className={`category-icon category-icon-${accent}`}
+      aria-hidden="true"
+    >
       <Icon size={size} strokeWidth={2.15} />
     </span>
   );
@@ -133,8 +199,16 @@ function categoryLabel(category) {
   return String(category?.name || 'Other');
 }
 
+
+/* =========================================================
+   APP
+========================================================= */
+
 export default function App() {
-  const [owner, setOwner] = useState(() => sessionStorage.getItem('dreamhome_owner') === 'true');
+  const [owner, setOwner] = useState(
+    () => sessionStorage.getItem('dreamhome_owner') === 'true'
+  );
+
   const [setup, setSetup] = useState(null);
   const [boot, setBoot] = useState(true);
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -144,12 +218,17 @@ export default function App() {
       e.preventDefault();
       setInstallPrompt(e);
     };
+
     window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
   }, []);
 
   async function installApp() {
     if (!installPrompt) return;
+
     installPrompt.prompt();
     await installPrompt.userChoice;
     setInstallPrompt(null);
@@ -162,6 +241,7 @@ export default function App() {
         .select('owner_username')
         .eq('id', true)
         .single();
+
       setSetup(!error && !!data?.owner_username);
       setBoot(false);
     })();
@@ -171,7 +251,10 @@ export default function App() {
     return (
       <div className="center splash">
         <div className="splash-card">
-          <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="Dream Home" />
+          <img
+            src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+            alt="Dream Home"
+          />
           <b>Dream Home</b>
           <span>Family Expense Tracker</span>
         </div>
@@ -185,8 +268,12 @@ export default function App() {
       setup={setup}
       setOwner={v => {
         setOwner(v);
-        if (v) sessionStorage.setItem('dreamhome_owner', 'true');
-        else sessionStorage.removeItem('dreamhome_owner');
+
+        if (v) {
+          sessionStorage.setItem('dreamhome_owner', 'true');
+        } else {
+          sessionStorage.removeItem('dreamhome_owner');
+        }
       }}
       installPrompt={installPrompt}
       installApp={installApp}
@@ -194,298 +281,2525 @@ export default function App() {
   );
 }
 
-function Dashboard({ owner, setup, setOwner, installPrompt, installApp }) {
+
+/* =========================================================
+   MAIN DASHBOARD CONTAINER
+========================================================= */
+
+function Dashboard({
+  owner,
+  setup,
+  setOwner,
+  installPrompt,
+  installApp
+}) {
   const [tab, setTab] = useState('dashboard');
+
   const [expenses, setExpenses] = useState([]);
   const [cats, setCats] = useState([]);
+  const [persons, setPersons] = useState([]);
+
   const [search, setSearch] = useState('');
   const [month, setMonth] = useState('all');
+
   const [err, setErr] = useState('');
   const [auth, setAuth] = useState(null);
 
   const [ownerCred, setOwnerCred] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('dreamhome_credentials') || 'null'); }
-    catch { return null; }
+    try {
+      return JSON.parse(
+        sessionStorage.getItem('dreamhome_credentials') || 'null'
+      );
+    } catch {
+      return null;
+    }
   });
 
+
+  /* =======================================================
+     LOAD DATA
+  ======================================================= */
+
   async function load() {
-    const [e, c] = await Promise.all([
-      supabase.from('expenses').select('*,category:categories(id,name,icon)').order('expense_date', { ascending: false }),
-      supabase.from('categories').select('*').order('name')
+    const [e, c, p] = await Promise.all([
+      supabase
+        .from('expenses')
+        .select(
+          '*,category:categories(id,name,icon),person:persons(id,name)'
+        )
+        .order('expense_date', { ascending: false }),
+
+      supabase
+        .from('categories')
+        .select('*')
+        .order('name'),
+
+      supabase
+        .from('persons')
+        .select('*')
+        .order('name')
     ]);
-    if (e.error || c.error) setErr(e.error?.message || c.error?.message);
-    else {
+
+    if (e.error || c.error || p.error) {
+      setErr(
+        e.error?.message ||
+        c.error?.message ||
+        p.error?.message ||
+        'Unable to load data.'
+      );
+    } else {
       setExpenses(e.data || []);
       setCats(c.data || []);
+      setPersons(p.data || []);
       setErr('');
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
-  const filtered = useMemo(() => expenses.filter(x => {
-    const q = search.toLowerCase().trim();
-    return (!q || String(x.title || '').toLowerCase().includes(q) || String(x.category?.name || '').toLowerCase().includes(q) || String(x.paid_by || '').toLowerCase().includes(q)) &&
-      (month === 'all' || String(x.expense_date).startsWith(month));
-  }), [expenses, search, month]);
 
-  const total = expenses.reduce((s, x) => s + Number(x.amount), 0);
-  const category = useMemo(() => sumBy(expenses, x => x.category?.name || 'Other'), [expenses]);
-  const member = useMemo(() => sumBy(expenses, x => x.paid_by || 'Unknown'), [expenses]);
-  const monthly = useMemo(() => sumBy(expenses, x => String(x.expense_date).slice(0, 7)), [expenses]);
+  /* =======================================================
+     FILTERED EXPENSES
+  ======================================================= */
+
+  const filtered = useMemo(() => {
+    return expenses.filter(x => {
+      const q = search.toLowerCase().trim();
+
+      const matchesSearch =
+        !q ||
+        String(x.title || '').toLowerCase().includes(q) ||
+        String(x.category?.name || '').toLowerCase().includes(q) ||
+        String(
+          x.person?.name ||
+          x.paid_by ||
+          ''
+        ).toLowerCase().includes(q);
+
+      const matchesMonth =
+        month === 'all' ||
+        String(x.expense_date).startsWith(month);
+
+      return matchesSearch && matchesMonth;
+    });
+  }, [expenses, search, month]);
+
+
+  /* =======================================================
+     TOTALS
+  ======================================================= */
+
+  const total = useMemo(
+    () =>
+      expenses.reduce(
+        (s, x) => s + Number(x.amount || 0),
+        0
+      ),
+    [expenses]
+  );
+
+  const category = useMemo(
+    () =>
+      sumBy(
+        expenses,
+        x => x.category?.name || 'Other'
+      ),
+    [expenses]
+  );
+
+  const member = useMemo(
+    () =>
+      sumBy(
+        expenses,
+        x =>
+          x.person?.name ||
+          x.paid_by ||
+          'Unknown'
+      ),
+    [expenses]
+  );
+
+  const monthly = useMemo(
+    () =>
+      sumBy(
+        expenses,
+        x =>
+          String(x.expense_date).slice(0, 7)
+      ),
+    [expenses]
+  );
+
+
+  /* =======================================================
+     LOGOUT
+  ======================================================= */
 
   function logout() {
     setOwner(false);
     setOwnerCred(null);
-    sessionStorage.removeItem('dreamhome_credentials');
-    sessionStorage.removeItem('dreamhome_owner');
+
+    sessionStorage.removeItem(
+      'dreamhome_credentials'
+    );
+
+    sessionStorage.removeItem(
+      'dreamhome_owner'
+    );
+
     setTab('dashboard');
   }
 
+
+  /* =======================================================
+     DELETE EXPENSE
+  ======================================================= */
+
   async function del(id) {
-    if (!ownerCred) { setErr('Owner session missing. Please login again.'); return; }
+    if (!ownerCred) {
+      setErr(
+        'Owner session missing. Please login again.'
+      );
+      return;
+    }
+
     if (!confirm('Delete this expense?')) return;
-    const { data, error } = await supabase.rpc('owner_delete_expense', {
-      p_username: ownerCred.username,
-      p_password: ownerCred.password,
-      p_id: id
-    });
-    if (error || !data?.ok) setErr(error?.message || data?.message || 'Delete failed');
-    else await load();
+
+    const { data, error } =
+      await supabase.rpc(
+        'owner_delete_expense',
+        {
+          p_username: ownerCred.username,
+          p_password: ownerCred.password,
+          p_id: id
+        }
+      );
+
+    if (error || !data?.ok) {
+      setErr(
+        error?.message ||
+        data?.message ||
+        'Delete failed'
+      );
+    } else {
+      await load();
+    }
   }
+
+
+  /* =======================================================
+     CSV EXPORT
+  ======================================================= */
 
   function csv() {
     const rows = [
-      ['Date', 'Expense', 'Category', 'Amount', 'Paid By', 'Notes'],
-      ...filtered.map(x => [x.expense_date, x.title, x.category?.name || '', x.amount, x.paid_by, x.notes || ''])
+      [
+        'Date',
+        'Expense',
+        'Category',
+        'Amount',
+        'Paid By',
+        'Notes'
+      ],
+
+      ...filtered.map(x => [
+        x.expense_date,
+        x.title,
+        x.category?.name || '',
+        x.amount,
+        x.person?.name || x.paid_by || '',
+        x.notes || ''
+      ])
     ];
-    const s = rows.map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(',')).join('\n');
+
+    const s = rows
+      .map(r =>
+        r
+          .map(v =>
+            `"${String(v).replaceAll('"', '""')}"`
+          )
+          .join(',')
+      )
+      .join('\n');
+
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([s], { type: 'text/csv' }));
-    a.download = 'dream-home-expenses.csv';
+
+    a.href = URL.createObjectURL(
+      new Blob([s], {
+        type: 'text/csv'
+      })
+    );
+
+    a.download =
+      'dream-home-expenses.csv';
+
     a.click();
+
     URL.revokeObjectURL(a.href);
   }
+
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
     <>
       <header className="topbar">
         <div className="brand">
-          <img className="brand-logo" src={`${import.meta.env.BASE_URL}logo.svg`} alt="Dream Home" />
+          <img
+            className="brand-logo"
+            src={`${import.meta.env.BASE_URL}logo.svg`}
+            alt="Dream Home"
+          />
         </div>
+
         <div className="head-actions">
-          {installPrompt && <button className="secondary small install-button" onClick={installApp} type="button"><Smartphone size={15} /> Install</button>}
-          <span className={`mode ${owner ? 'edit' : ''}`}>{owner ? <><KeyRound size={13} /> EDIT MODE</> : <><Eye size={13} /> VIEW ONLY</>}</span>
-          {owner ? <button className="secondary small" onClick={logout} type="button"><LogOut size={15} /> Logout</button> : <button className="primary small" onClick={() => setAuth('login')} type="button"><Lock size={15} /> Owner Login</button>}
+
+          {installPrompt && (
+            <button
+              className="secondary small install-button"
+              onClick={installApp}
+              type="button"
+            >
+              <Smartphone size={15} />
+              Install
+            </button>
+          )}
+
+          <span
+            className={`mode ${
+              owner ? 'edit' : ''
+            }`}
+          >
+            {owner ? (
+              <>
+                <KeyRound size={13} />
+                EDIT MODE
+              </>
+            ) : (
+              <>
+                <Eye size={13} />
+                VIEW ONLY
+              </>
+            )}
+          </span>
+
+          {owner ? (
+            <button
+              className="secondary small"
+              onClick={logout}
+              type="button"
+            >
+              <LogOut size={15} />
+              Logout
+            </button>
+          ) : (
+            <button
+              className="primary small"
+              onClick={() => setAuth('login')}
+              type="button"
+            >
+              <Lock size={15} />
+              Owner Login
+            </button>
+          )}
         </div>
       </header>
 
+
       <div className="layout">
+
         <aside>
+
           <div className="side-brand">
-            <img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="" />
-            <div><b>Dream Home</b><small>Family finances</small></div>
+            <img
+              src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+              alt=""
+            />
+
+            <div>
+              <b>Dream Home</b>
+              <small>Family finances</small>
+            </div>
           </div>
+
+
           <div className="nav-list">
-            <Nav t={tab} set={setTab} v="dashboard" i={<Home />}>Dashboard</Nav>
-            <Nav t={tab} set={setTab} v="expenses" i={<ReceiptIndianRupee />}>Expenses</Nav>
-            <Nav t={tab} set={setTab} v="summary" i={<BarChart3 />}>Summary</Nav>
+
+            <Nav
+              t={tab}
+              set={setTab}
+              v="dashboard"
+              i={<Home />}
+            >
+              Dashboard
+            </Nav>
+
+            <Nav
+              t={tab}
+              set={setTab}
+              v="expenses"
+              i={<ReceiptIndianRupee />}
+            >
+              Expenses
+            </Nav>
+
+            <Nav
+              t={tab}
+              set={setTab}
+              v="summary"
+              i={<BarChart3 />}
+            >
+              Summary
+            </Nav>
+
+            <Nav
+              t={tab}
+              set={setTab}
+              v="persons"
+              i={<UsersIcon />}
+            >
+              Persons
+            </Nav>
+
           </div>
+
+
           <div className="side-bottom">
-            <span className="secure-mark"><Check size={14} /></span>
-            <div><b>Cloud synced</b><small>{owner ? 'Editing is enabled for this session.' : 'View-only access is active.'}</small></div>
+
+            <span className="secure-mark">
+              <Check size={14} />
+            </span>
+
+            <div>
+              <b>Cloud synced</b>
+
+              <small>
+                {owner
+                  ? 'Editing is enabled for this session.'
+                  : 'View-only access is active.'}
+              </small>
+            </div>
+
           </div>
+
         </aside>
 
+
         <main>
-          {err && <div className="error"><span>{err}</span><button onClick={() => setErr('')} type="button"><X size={15} /></button></div>}
+
+          {err && (
+            <div className="error">
+              <span>{err}</span>
+
+              <button
+                onClick={() => setErr('')}
+                type="button"
+              >
+                <X size={15} />
+              </button>
+            </div>
+          )}
+
 
           {tab === 'dashboard' && (
-            <DashboardView total={total} expenses={expenses} category={category} monthly={monthly} owner={owner} setAuth={setAuth} del={del} setTab={setTab} />
+            <DashboardView
+              total={total}
+              expenses={expenses}
+              category={category}
+              member={member}
+              owner={owner}
+              setAuth={setAuth}
+              del={del}
+              setTab={setTab}
+            />
           )}
+
 
           {tab === 'expenses' && (
-            <ExpensesView filtered={filtered} search={search} setSearch={setSearch} month={month} setMonth={setMonth} csv={csv} owner={owner} setAuth={setAuth} del={del} />
+            <ExpensesView
+              filtered={filtered}
+              search={search}
+              setSearch={setSearch}
+              month={month}
+              setMonth={setMonth}
+              csv={csv}
+              owner={owner}
+              setAuth={setAuth}
+              del={del}
+            />
           )}
 
+
           {tab === 'summary' && (
-            <SummaryView total={total} expenses={expenses} category={category} member={member} monthly={monthly} />
+            <SummaryView
+              total={total}
+              expenses={expenses}
+              category={category}
+              member={member}
+              monthly={monthly}
+            />
           )}
+
+
+          {tab === 'persons' && (
+            <PersonsView
+              persons={persons}
+              owner={owner}
+              ownerCred={ownerCred}
+              load={load}
+              setErr={setErr}
+            />
+          )}
+
         </main>
       </div>
 
-      {auth === 'login' && <OwnerModal mode={setup ? 'login' : 'create'} close={() => setAuth(null)} success={cred => {
-        setOwner(true);
-        setOwnerCred(cred);
-        sessionStorage.setItem('dreamhome_credentials', JSON.stringify(cred));
-        setAuth(null);
-      }} />}
 
-      {auth === 'expense' && <ExpenseModal expense={null} cats={cats} close={() => setAuth(null)} saved={async () => { setAuth(null); await load(); }} ownerCred={ownerCred} />}
-      {typeof auth === 'object' && auth?.type === 'expense' && <ExpenseModal expense={auth.expense || null} cats={cats} close={() => setAuth(null)} saved={async () => { setAuth(null); await load(); }} ownerCred={ownerCred} />}
+      {auth === 'login' && (
+        <OwnerModal
+          mode={
+            setup
+              ? 'login'
+              : 'create'
+          }
+          close={() => setAuth(null)}
+          success={cred => {
+            setOwner(true);
+            setOwnerCred(cred);
+
+            sessionStorage.setItem(
+              'dreamhome_credentials',
+              JSON.stringify(cred)
+            );
+
+            setAuth(null);
+          }}
+        />
+      )}
+
+
+      {auth === 'expense' && (
+        <ExpenseModal
+          expense={null}
+          cats={cats}
+          persons={persons}
+          close={() => setAuth(null)}
+          saved={async () => {
+            setAuth(null);
+            await load();
+          }}
+          ownerCred={ownerCred}
+        />
+      )}
+
+
+      {typeof auth === 'object' &&
+        auth?.type === 'expense' && (
+          <ExpenseModal
+            expense={auth.expense || null}
+            cats={cats}
+            persons={persons}
+            close={() => setAuth(null)}
+            saved={async () => {
+              setAuth(null);
+              await load();
+            }}
+            ownerCred={ownerCred}
+          />
+        )}
+
     </>
   );
 }
 
-function DashboardView({ total, expenses, category, monthly, owner, setAuth, del, setTab }) {
-  const latestMonth = monthly[0]?.[0] || new Date().toISOString().slice(0, 7);
-  const monthLabel = new Date(`${latestMonth}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
-  const latest = expenses.slice(0, 5);
-  const top = category.slice(0, 5);
-  const max = top[0]?.[1] || 1;
-  const recentMonth = latestMonth;
-  const recentTotal = expenses.filter(x => String(x.expense_date).startsWith(recentMonth)).reduce((s, x) => s + Number(x.amount), 0);
 
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+function DashboardView({
+  total,
+  expenses,
+  category,
+  member,
+  owner,
+  setAuth,
+  del,
+  setTab
+}) {
   return (
     <>
-      <Head title="Dashboard" sub="A clear view of your home's finances." action={owner ? <button type="button" className="primary add-button" onClick={() => setAuth('expense')}><Plus size={17} /> Add Expense</button> : null} />
+      <Head
+        title="Dashboard"
+        sub="A clear view of your home's finances."
+        action={
+          owner ? (
+            <button
+              type="button"
+              className="primary add-button"
+              onClick={() =>
+                setAuth('expense')
+              }
+            >
+              <Plus size={17} />
+              Add Expense
+            </button>
+          ) : null
+        }
+      />
+
+
+      {/* ALL-TIME TOTAL */}
 
       <section className="hero-card">
+
         <div className="hero-copy">
-          <span className="eyebrow">{monthLabel.toUpperCase()} · HOME FINANCES</span>
-          <h2>{money(recentTotal)}</h2>
-          <p>spent this month</p>
-          <div className="hero-meta"><span><TrendingUp size={14} /> {expenses.length} recorded expenses</span><span><Wallet size={14} /> {category.length} categories</span></div>
+
+          <span className="eyebrow">
+            TOTAL SPENDING · ALL MONTHS
+          </span>
+
+          <h2>{money(total)}</h2>
+
+          <p>total amount spent</p>
+
+          <div className="hero-meta">
+
+            <span>
+              <Receipt size={14} />
+              {expenses.length} recorded expenses
+            </span>
+
+            <span>
+              <Wallet size={14} />
+              {category.length} categories
+            </span>
+
+          </div>
+
         </div>
-        <div className="hero-architecture" aria-hidden="true">
-          <div className="hero-house"><House size={88} strokeWidth={1.15} /></div>
-          <div className="hero-rupee">₹</div>
+
+
+        <div
+          className="hero-architecture"
+          aria-hidden="true"
+        >
+          <div className="hero-house">
+            <House
+              size={88}
+              strokeWidth={1.15}
+            />
+          </div>
+
+          <div className="hero-rupee">
+            ₹
+          </div>
         </div>
+
       </section>
 
-      <div className="quick-stats">
-        <MiniStat label="Total spent" value={money(total)} icon={<WalletCards />} />
-        <MiniStat label="Transactions" value={expenses.length} icon={<Receipt />} />
-        <MiniStat label="Top category" value={category[0]?.[0] || '—'} icon={<Blocks />} />
-      </div>
 
-      <div className="content-grid dashboard-content">
-        <Card title="Spending by category" subtitle="Where the money is going">
-          <CategoryBars items={top} total={total} />
-        </Card>
-        <Card title="Monthly rhythm" subtitle="Latest months">
-          <MonthlyBars items={monthly.slice(0, 6)} />
-        </Card>
-      </div>
+      {/* PERSON CONTRIBUTION */}
 
-      <Card title="Recent expenses" subtitle="Latest activity" action={<button className="text-action" onClick={() => setTab('expenses')} type="button">View all <ChevronRight size={14} /></button>}>
-        <Table rows={latest} owner={owner} edit={x => setAuth({ type: 'expense', expense: x })} del={del} />
+      <Card
+        title="Person-wise Contribution"
+        subtitle="Total contribution across all months"
+      >
+        <PersonBars
+          items={member}
+          total={total}
+        />
       </Card>
+
     </>
   );
 }
 
-function ExpensesView({ filtered, search, setSearch, month, setMonth, csv, owner, setAuth, del }) {
+
+/* =========================================================
+   EXPENSES
+========================================================= */
+
+function ExpensesView({
+  filtered,
+  search,
+  setSearch,
+  month,
+  setMonth,
+  csv,
+  owner,
+  setAuth,
+  del
+}) {
   return (
     <>
-      <Head title="Expenses" sub="A complete record of every home payment." action={owner ? <button type="button" className="primary add-button" onClick={() => setAuth('expense')}><Plus size={17} /> Add Expense</button> : null} />
+      <Head
+        title="Expenses"
+        sub="A complete record of every home payment."
+        action={
+          owner ? (
+            <button
+              type="button"
+              className="primary add-button"
+              onClick={() =>
+                setAuth('expense')
+              }
+            >
+              <Plus size={17} />
+              Add Expense
+            </button>
+          ) : null
+        }
+      />
+
+
       <div className="expense-toolbar">
-        <div className="search premium-input"><Search size={17} /><input placeholder="Search expenses" value={search} onChange={e => setSearch(e.target.value)} /></div>
-        <label className="month-input"><CalendarDays size={16} /><input type="month" value={month === 'all' ? '' : month} onChange={e => setMonth(e.target.value || 'all')} /></label>
-        <button className="secondary" onClick={csv} type="button"><Download size={16} /> Export</button>
+
+        <div className="search premium-input">
+          <Search size={17} />
+
+          <input
+            placeholder="Search expenses"
+            value={search}
+            onChange={e =>
+              setSearch(e.target.value)
+            }
+          />
+        </div>
+
+
+        <label className="month-input">
+          <CalendarDays size={16} />
+
+          <input
+            type="month"
+            value={
+              month === 'all'
+                ? ''
+                : month
+            }
+            onChange={e =>
+              setMonth(
+                e.target.value ||
+                'all'
+              )
+            }
+          />
+        </label>
+
+
+        <button
+          className="secondary"
+          onClick={csv}
+          type="button"
+        >
+          <Download size={16} />
+          Export
+        </button>
+
       </div>
+
+
       <Card>
-        <div className="result result-premium"><div><span>Showing</span><b>{filtered.length}</b><span>records</span></div><strong>{money(filtered.reduce((s, x) => s + Number(x.amount), 0))}</strong></div>
-        <Table rows={filtered} owner={owner} edit={x => setAuth({ type: 'expense', expense: x })} del={del} />
+
+        <div className="result result-premium">
+
+          <div>
+            <span>Showing</span>
+            <b>{filtered.length}</b>
+            <span>records</span>
+          </div>
+
+          <strong>
+            {money(
+              filtered.reduce(
+                (s, x) =>
+                  s +
+                  Number(
+                    x.amount || 0
+                  ),
+                0
+              )
+            )}
+          </strong>
+
+        </div>
+
+
+        <Table
+          rows={filtered}
+          owner={owner}
+          edit={x =>
+            setAuth({
+              type: 'expense',
+              expense: x
+            })
+          }
+          del={del}
+        />
+
       </Card>
     </>
   );
 }
 
-function SummaryView({ total, expenses, category, member, monthly }) {
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+function SummaryView({
+  total,
+  expenses,
+  category,
+  member,
+  monthly
+}) {
   return (
     <>
-      <Head title="Summary" sub="See the bigger picture behind your home spending." />
+      <Head
+        title="Summary"
+        sub="See the bigger picture behind your home spending."
+      />
+
+
       <section className="summary-hero">
-        <div><span className="eyebrow">ALL-TIME SPENDING</span><strong>{money(total)}</strong><p>{expenses.length} transactions across {category.length} categories</p></div>
-        <div className="summary-badge"><BarChart3 size={20} /><span>Financial overview</span></div>
+
+        <div>
+
+          <span className="eyebrow">
+            ALL-TIME SPENDING
+          </span>
+
+          <strong>
+            {money(total)}
+          </strong>
+
+          <p>
+            {expenses.length} transactions
+            across {category.length}
+            categories
+          </p>
+
+        </div>
+
+
+        <div className="summary-badge">
+          <BarChart3 size={20} />
+          <span>Financial overview</span>
+        </div>
+
       </section>
+
+
       <div className="content-grid summary-content">
-        <Card title="Category breakdown" subtitle="Share of total spending"><CategoryBars items={category} total={total} /></Card>
-        <Card title="Paid by" subtitle="Contribution by person"><PersonBars items={member} total={total} /></Card>
-        <Card title="Monthly spending" subtitle="Recent month-to-month view" wide><MonthlyBars items={monthly.slice(0, 8)} /></Card>
+
+        <Card
+          title="Category breakdown"
+          subtitle="Share of total spending"
+        >
+          <CategoryBars
+            items={category}
+            total={total}
+          />
+        </Card>
+
+
+        <Card
+          title="Paid by"
+          subtitle="Contribution by person"
+        >
+          <PersonBars
+            items={member}
+            total={total}
+          />
+        </Card>
+
+
+        <Card
+          title="Monthly spending"
+          subtitle="Recent month-to-month view"
+          wide
+        >
+          <MonthlyBars
+            items={monthly.slice(0, 8)}
+          />
+        </Card>
+
       </div>
     </>
   );
 }
 
-function Nav({ t, set, v, i, children }) {
-  return <button type="button" className={t === v ? 'nav active' : 'nav'} onClick={() => set(v)}>{i}<span>{children}</span></button>;
-}
 
-function Head({ title, sub, action }) {
-  return <div className="page-head"><div><div className="page-kicker">DREAM HOME</div><h1>{title}</h1><p>{sub}</p></div>{action}</div>;
-}
+/* =========================================================
+   PERSONS VIEW
+========================================================= */
 
-function Card({ title, subtitle, action, children, wide }) {
-  return <section className={`card premium-card ${wide ? 'wide' : ''}`}><div className="card-title"><div><b>{title}</b>{subtitle && <small>{subtitle}</small>}</div>{action}</div>{children}</section>;
-}
+function PersonsView({
+  persons,
+  owner,
+  ownerCred,
+  load,
+  setErr
+}) {
+  const [editing, setEditing] =
+    useState(null);
 
-function MiniStat({ label, value, icon }) {
-  return <div className="mini-stat"><span className="mini-stat-icon">{icon}</span><div><small>{label}</small><strong>{value}</strong></div></div>;
-}
+  const [name, setName] =
+    useState('');
 
-function CategoryBars({ items, total }) {
-  return <div className="premium-bars">{items.length ? items.map(([name, value]) => {
-    const pct = total ? Math.round((value / total) * 100) : 0;
-    return <div className="premium-bar" key={name}><div className="premium-bar-head"><div className="premium-label"><CategoryIcon category={{ name }} size={15} /><span>{name}</span></div><b>{money(value)} <em>{pct}%</em></b></div><div className="premium-track"><span style={{ width: `${Math.max(pct, 2)}%` }} /></div></div>;
-  }) : <div className="empty">No expenses yet.</div>}</div>;
-}
+  const [busy, setBusy] =
+    useState(false);
 
-function PersonBars({ items, total }) {
-  return <div className="premium-bars">{items.length ? items.map(([name, value]) => {
-    const pct = total ? Math.round((value / total) * 100) : 0;
-    return <div className="premium-bar" key={name}><div className="premium-bar-head"><div className="premium-label"><span className="person-dot">{String(name).slice(0, 1).toUpperCase()}</span><span>{name}</span></div><b>{money(value)} <em>{pct}%</em></b></div><div className="premium-track"><span style={{ width: `${Math.max(pct, 2)}%` }} /></div></div>;
-  }) : <div className="empty">No expenses yet.</div>}</div>;
-}
 
-function MonthlyBars({ items }) {
-  if (!items.length) return <div className="empty">No monthly data yet.</div>;
-  const max = Math.max(...items.map(x => x[1]), 1);
-  return <div className="monthly-bars">{items.slice().reverse().map(([name, value]) => {
-    const label = new Date(`${name}-01T00:00:00`).toLocaleDateString('en-IN', { month: 'short' });
-    return <div className="month-column" key={name}><div className="month-value">{money(value)}</div><div className="month-bar"><span style={{ height: `${Math.max((value / max) * 100, 7)}%` }} /></div><small>{label}</small></div>;
-  })}</div>;
-}
+  function startAdd() {
+    setEditing('new');
+    setName('');
+    setErr('');
+  }
 
-function Table({ rows, owner, edit, del }) {
-  if (!rows.length) return <div className="empty">No expenses found.</div>;
-  return <>
-    <div className="table-wrap desktop-table"><table><thead><tr><th>Date</th><th>Expense</th><th>Category</th><th>Paid By</th><th className="right">Amount</th>{owner && <th>Actions</th>}</tr></thead><tbody>{rows.map(x => <tr key={x.id}><td>{dateText(x.expense_date)}</td><td><b>{x.title}</b>{x.notes && <small>{x.notes}</small>}</td><td><span className="category-chip"><CategoryIcon category={x.category} size={15} />{categoryLabel(x.category)}</span></td><td>{x.paid_by}</td><td className="right amount">{money(x.amount)}</td>{owner && <td className="actions-cell"><button className="icon action-edit" onClick={() => edit(x)} type="button" title="Edit"><Edit3 size={15} /></button><button className="icon danger" onClick={() => del(x.id)} type="button" title="Delete"><Trash2 size={15} /></button></td>}</tr>)}</tbody></table></div>
-    <div className="mobile-expenses">{rows.map(x => <article className="expense-card" key={x.id}><div className="expense-card-top"><CategoryIcon category={x.category} size={17} /><div className="expense-card-title"><b>{x.title}</b><span>{dateText(x.expense_date)}</span></div><strong>{money(x.amount)}</strong></div><div className="expense-card-meta"><span>{categoryLabel(x.category)}</span><span>Paid by <b>{x.paid_by}</b></span></div>{x.notes && <p className="expense-card-note">{x.notes}</p>}{owner && <div className="expense-card-actions"><button className="mobile-action edit-mobile" onClick={() => edit(x)} type="button"><Edit3 size={14} /> Edit</button><button className="mobile-action delete-mobile" onClick={() => del(x.id)} type="button"><Trash2 size={14} /> Delete</button></div>}</article>)}</div>
-  </>;
-}
 
-function OwnerModal({ mode, close, success }) {
-  const [u, setU] = useState(''); const [p, setP] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
-  async function go(e) {
-    e.preventDefault(); setBusy(true); setErr('');
-    const fn = mode === 'create' ? 'owner_create' : 'owner_login';
-    const { data, error } = await supabase.rpc(fn, { p_username: u.trim(), p_password: p });
-    if (error || !data?.ok) setErr(error?.message || data?.message || 'Something went wrong.');
-    else success({ username: u.trim().toLowerCase(), password: p });
+  function startEdit(person) {
+    setEditing(person);
+    setName(person.name);
+    setErr('');
+  }
+
+
+  function closeModal() {
+    setEditing(null);
+    setName('');
+  }
+
+
+  async function savePerson(e) {
+    e.preventDefault();
+
+    if (!ownerCred) {
+      setErr(
+        'Owner session missing. Please login again.'
+      );
+      return;
+    }
+
+    const cleanName =
+      name.trim();
+
+    if (!cleanName) {
+      setErr(
+        'Please enter a person name.'
+      );
+      return;
+    }
+
+    setBusy(true);
+    setErr('');
+
+
+    const isNew =
+      editing === 'new';
+
+
+    const rpcName =
+      isNew
+        ? 'owner_add_person'
+        : 'owner_update_person';
+
+
+    const params = isNew
+      ? {
+          p_username:
+            ownerCred.username,
+          p_password:
+            ownerCred.password,
+          p_name:
+            cleanName
+        }
+      : {
+          p_username:
+            ownerCred.username,
+          p_password:
+            ownerCred.password,
+          p_id:
+            editing.id,
+          p_name:
+            cleanName
+        };
+
+
+    const {
+      data,
+      error
+    } = await supabase.rpc(
+      rpcName,
+      params
+    );
+
+
+    if (error || !data?.ok) {
+      setErr(
+        error?.message ||
+        data?.message ||
+        'Unable to save person.'
+      );
+    } else {
+      closeModal();
+      await load();
+    }
+
     setBusy(false);
   }
-  return <div className="backdrop"><div className="modal auth-modal"><div className="modal-head"><div className="auth-title"><img src={`${import.meta.env.BASE_URL}icons/icon-192.png`} alt="Dream Home" /><div><div className="page-kicker">DREAM HOME</div><h2>{mode === 'create' ? 'Create Owner Login' : 'Owner Login'}</h2><p>{mode === 'create' ? 'Create the edit credential for your tracker.' : 'Enter the shared edit credential.'}</p></div></div><button className="icon" onClick={close} type="button"><X /></button></div><form className="form" onSubmit={go}><label>Username<input value={u} onChange={e => setU(e.target.value)} autoCapitalize="none" required placeholder="dreamhome" /></label><label>Password<input type="password" value={p} onChange={e => setP(e.target.value)} minLength={8} required placeholder="At least 8 characters" /></label>{err && <div className="notice">{err}</div>}<button className="primary full" disabled={busy} type="submit">{busy ? 'Please wait…' : mode === 'create' ? 'Create Owner Account' : 'Login & Enable Editing'}</button></form>{mode === 'create' && <small className="privacy">This is an app login, not your Supabase login.</small>}</div></div>;
+
+
+  async function deletePerson(person) {
+    if (!ownerCred) {
+      setErr(
+        'Owner session missing. Please login again.'
+      );
+      return;
+    }
+
+    if (
+      !confirm(
+        `Delete "${person.name}"?`
+      )
+    ) {
+      return;
+    }
+
+
+    const {
+      data,
+      error
+    } = await supabase.rpc(
+      'owner_delete_person',
+      {
+        p_username:
+          ownerCred.username,
+        p_password:
+          ownerCred.password,
+        p_id:
+          person.id
+      }
+    );
+
+
+    if (error || !data?.ok) {
+      setErr(
+        error?.message ||
+        data?.message ||
+        'Unable to delete person.'
+      );
+    } else {
+      await load();
+    }
+  }
+
+
+  return (
+    <>
+      <Head
+        title="Persons"
+        sub="Manage the people who contribute to your home expenses."
+        action={
+          owner ? (
+            <button
+              type="button"
+              className="primary add-button"
+              onClick={startAdd}
+            >
+              <Plus size={17} />
+              Add Person
+            </button>
+          ) : null
+        }
+      />
+
+
+      <Card
+        title="Family Members"
+        subtitle="Use these names when recording expenses."
+      >
+
+        {!persons.length ? (
+          <div className="empty">
+            No persons added yet.
+          </div>
+        ) : (
+          <div className="persons-list">
+
+            {persons.map(person => (
+
+              <div
+                className="person-row"
+                key={person.id}
+              >
+
+                <div className="person-info">
+
+                  <span className="person-avatar">
+                    {String(
+                      person.name || '?'
+                    )
+                      .slice(0, 1)
+                      .toUpperCase()}
+                  </span>
+
+                  <div>
+                    <b>{person.name}</b>
+                    <small>
+                      Available for expense entries
+                    </small>
+                  </div>
+
+                </div>
+
+
+                {owner && (
+                  <div className="person-actions">
+
+                    <button
+                      className="icon action-edit"
+                      type="button"
+                      title="Edit"
+                      onClick={() =>
+                        startEdit(person)
+                      }
+                    >
+                      <Edit3 size={15} />
+                    </button>
+
+
+                    <button
+                      className="icon danger"
+                      type="button"
+                      title="Delete"
+                      onClick={() =>
+                        deletePerson(person)
+                      }
+                    >
+                      <Trash2 size={15} />
+                    </button>
+
+                  </div>
+                )}
+
+              </div>
+
+            ))}
+
+          </div>
+        )}
+
+      </Card>
+
+
+      {editing && (
+        <div className="backdrop">
+
+          <div className="modal">
+
+            <div className="modal-head">
+
+              <div>
+                <div className="page-kicker">
+                  DREAM HOME
+                </div>
+
+                <h2>
+                  {editing === 'new'
+                    ? 'Add Person'
+                    : 'Edit Person'}
+                </h2>
+
+                <p>
+                  {editing === 'new'
+                    ? 'Add a person who can be selected when recording expenses.'
+                    : 'Update the person's name.'}
+                </p>
+              </div>
+
+
+              <button
+                className="icon"
+                onClick={closeModal}
+                type="button"
+              >
+                <X />
+              </button>
+
+            </div>
+
+
+            <form
+              className="form"
+              onSubmit={savePerson}
+            >
+
+              <label>
+                Person Name
+
+                <input
+                  autoFocus
+                  required
+                  value={name}
+                  onChange={e =>
+                    setName(e.target.value)
+                  }
+                  placeholder="Enter person's name"
+                />
+              </label>
+
+
+              <div className="modal-actions">
+
+                <button
+                  type="button"
+                  className="secondary"
+                  onClick={closeModal}
+                >
+                  Cancel
+                </button>
+
+
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={busy}
+                >
+                  {busy
+                    ? 'Saving…'
+                    : (
+                      <>
+                        <Check />
+                        Save Person
+                      </>
+                    )}
+                </button>
+
+              </div>
+
+            </form>
+
+          </div>
+
+        </div>
+      )}
+
+    </>
+  );
 }
 
-function ExpenseModal({ expense, cats, close, saved, ownerCred }) {
-  const [date, setDate] = useState(expense?.expense_date || new Date().toISOString().slice(0, 10));
-  const [title, setTitle] = useState(expense?.title || '');
-  const [cat, setCat] = useState(expense?.category_id || cats[0]?.id || '');
-  const [amount, setAmount] = useState(expense?.amount || '');
-  const [paid, setPaid] = useState(expense?.paid_by || '');
-  const [notes, setNotes] = useState(expense?.notes || '');
-  const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
+
+/* =========================================================
+   NAVIGATION
+========================================================= */
+
+function Nav({
+  t,
+  set,
+  v,
+  i,
+  children
+}) {
+  return (
+    <button
+      type="button"
+      className={
+        t === v
+          ? 'nav active'
+          : 'nav'
+      }
+      onClick={() => set(v)}
+    >
+      {i}
+      <span>{children}</span>
+    </button>
+  );
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+function Head({
+  title,
+  sub,
+  action
+}) {
+  return (
+    <div className="page-head">
+
+      <div>
+
+        <div className="page-kicker">
+          DREAM HOME
+        </div>
+
+        <h1>{title}</h1>
+
+        <p>{sub}</p>
+
+      </div>
+
+      {action}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   CARD
+========================================================= */
+
+function Card({
+  title,
+  subtitle,
+  action,
+  children,
+  wide
+}) {
+  return (
+    <section
+      className={`card premium-card ${
+        wide ? 'wide' : ''
+      }`}
+    >
+
+      {(title || action) && (
+        <div className="card-title">
+
+          <div>
+
+            {title && (
+              <b>{title}</b>
+            )}
+
+            {subtitle && (
+              <small>
+                {subtitle}
+              </small>
+            )}
+
+          </div>
+
+          {action}
+
+        </div>
+      )}
+
+      {children}
+
+    </section>
+  );
+}
+
+
+/* =========================================================
+   CATEGORY BARS
+========================================================= */
+
+function CategoryBars({
+  items,
+  total
+}) {
+  return (
+    <div className="premium-bars">
+
+      {items.length ? (
+        items.map(
+          ([name, value]) => {
+
+            const pct =
+              total
+                ? Math.round(
+                    (value / total) *
+                      100
+                  )
+                : 0;
+
+            return (
+              <div
+                className="premium-bar"
+                key={name}
+              >
+
+                <div className="premium-bar-head">
+
+                  <div className="premium-label">
+
+                    <CategoryIcon
+                      category={{ name }}
+                      size={15}
+                    />
+
+                    <span>
+                      {name}
+                    </span>
+
+                  </div>
+
+
+                  <b>
+                    {money(value)}{' '}
+
+                    <em>
+                      {pct}%
+                    </em>
+                  </b>
+
+                </div>
+
+
+                <div className="premium-track">
+
+                  <span
+                    style={{
+                      width: `${Math.max(
+                        pct,
+                        2
+                      )}%`
+                    }}
+                  />
+
+                </div>
+
+              </div>
+            );
+          }
+        )
+      ) : (
+        <div className="empty">
+          No expenses yet.
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   PERSON BARS
+========================================================= */
+
+function PersonBars({
+  items,
+  total
+}) {
+  return (
+    <div className="premium-bars">
+
+      {items.length ? (
+        items.map(
+          ([name, value]) => {
+
+            const pct =
+              total
+                ? Math.round(
+                    (value / total) *
+                      100
+                  )
+                : 0;
+
+            return (
+              <div
+                className="premium-bar"
+                key={name}
+              >
+
+                <div className="premium-bar-head">
+
+                  <div className="premium-label">
+
+                    <span className="person-dot">
+                      {String(name)
+                        .slice(0, 1)
+                        .toUpperCase()}
+                    </span>
+
+                    <span>
+                      {name}
+                    </span>
+
+                  </div>
+
+
+                  <b>
+                    {money(value)}{' '}
+
+                    <em>
+                      {pct}%
+                    </em>
+                  </b>
+
+                </div>
+
+
+                <div className="premium-track">
+
+                  <span
+                    style={{
+                      width: `${Math.max(
+                        pct,
+                        2
+                      )}%`
+                    }}
+                  />
+
+                </div>
+
+              </div>
+            );
+          }
+        )
+      ) : (
+        <div className="empty">
+          No expenses yet.
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   MONTHLY BARS
+========================================================= */
+
+function MonthlyBars({
+  items
+}) {
+  if (!items.length) {
+    return (
+      <div className="empty">
+        No monthly data yet.
+      </div>
+    );
+  }
+
+  const max = Math.max(
+    ...items.map(x => x[1]),
+    1
+  );
+
+  return (
+    <div className="monthly-bars">
+
+      {items
+        .slice()
+        .reverse()
+        .map(([name, value]) => {
+
+          const label =
+            new Date(
+              `${name}-01T00:00:00`
+            ).toLocaleDateString(
+              'en-IN',
+              {
+                month: 'short'
+              }
+            );
+
+          return (
+            <div
+              className="month-column"
+              key={name}
+            >
+
+              <div className="month-value">
+                {money(value)}
+              </div>
+
+              <div className="month-bar">
+
+                <span
+                  style={{
+                    height: `${Math.max(
+                      (value / max) *
+                        100,
+                      7
+                    )}%`
+                  }}
+                />
+
+              </div>
+
+              <small>{label}</small>
+
+            </div>
+          );
+        })}
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   EXPENSE TABLE
+========================================================= */
+
+function Table({
+  rows,
+  owner,
+  edit,
+  del
+}) {
+  if (!rows.length) {
+    return (
+      <div className="empty">
+        No expenses found.
+      </div>
+    );
+  }
+
+
+  return (
+    <>
+      <div className="table-wrap desktop-table">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>Date</th>
+              <th>Expense</th>
+              <th>Category</th>
+              <th>Paid By</th>
+
+              <th className="right">
+                Amount
+              </th>
+
+              {owner && (
+                <th>
+                  Actions
+                </th>
+              )}
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            {rows.map(x => (
+
+              <tr key={x.id}>
+
+                <td>
+                  {dateText(
+                    x.expense_date
+                  )}
+                </td>
+
+
+                <td>
+
+                  <b>{x.title}</b>
+
+                  {x.notes && (
+                    <small>
+                      {x.notes}
+                    </small>
+                  )}
+
+                </td>
+
+
+                <td>
+
+                  <span className="category-chip">
+
+                    <CategoryIcon
+                      category={x.category}
+                      size={15}
+                    />
+
+                    {categoryLabel(
+                      x.category
+                    )}
+
+                  </span>
+
+                </td>
+
+
+                <td>
+                  {x.person?.name ||
+                    x.paid_by ||
+                    '—'}
+                </td>
+
+
+                <td className="right amount">
+                  {money(x.amount)}
+                </td>
+
+
+                {owner && (
+                  <td className="actions-cell">
+
+                    <button
+                      className="icon action-edit"
+                      onClick={() =>
+                        edit(x)
+                      }
+                      type="button"
+                      title="Edit"
+                    >
+                      <Edit3 size={15} />
+                    </button>
+
+
+                    <button
+                      className="icon danger"
+                      onClick={() =>
+                        del(x.id)
+                      }
+                      type="button"
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+
+                  </td>
+                )}
+
+              </tr>
+
+            ))}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+
+      <div className="mobile-expenses">
+
+        {rows.map(x => (
+
+          <article
+            className="expense-card"
+            key={x.id}
+          >
+
+            <div className="expense-card-top">
+
+              <CategoryIcon
+                category={x.category}
+                size={17}
+              />
+
+              <div className="expense-card-title">
+
+                <b>{x.title}</b>
+
+                <span>
+                  {dateText(
+                    x.expense_date
+                  )}
+                </span>
+
+              </div>
+
+
+              <strong>
+                {money(x.amount)}
+              </strong>
+
+            </div>
+
+
+            <div className="expense-card-meta">
+
+              <span>
+                {categoryLabel(
+                  x.category
+                )}
+              </span>
+
+              <span>
+                Paid by{' '}
+                <b>
+                  {x.person?.name ||
+                    x.paid_by ||
+                    '—'}
+                </b>
+              </span>
+
+            </div>
+
+
+            {x.notes && (
+              <p className="expense-card-note">
+                {x.notes}
+              </p>
+            )}
+
+
+            {owner && (
+              <div className="expense-card-actions">
+
+                <button
+                  className="mobile-action edit-mobile"
+                  onClick={() =>
+                    edit(x)
+                  }
+                  type="button"
+                >
+                  <Edit3 size={14} />
+                  Edit
+                </button>
+
+
+                <button
+                  className="mobile-action delete-mobile"
+                  onClick={() =>
+                    del(x.id)
+                  }
+                  type="button"
+                >
+                  <Trash2 size={14} />
+                  Delete
+                </button>
+
+              </div>
+            )}
+
+          </article>
+
+        ))}
+
+      </div>
+    </>
+  );
+}
+
+
+/* =========================================================
+   OWNER MODAL
+========================================================= */
+
+function OwnerModal({
+  mode,
+  close,
+  success
+}) {
+  const [u, setU] =
+    useState('');
+
+  const [p, setP] =
+    useState('');
+
+  const [busy, setBusy] =
+    useState(false);
+
+  const [err, setErr] =
+    useState('');
+
+
+  async function go(e) {
+    e.preventDefault();
+
+    setBusy(true);
+    setErr('');
+
+
+    const fn =
+      mode === 'create'
+        ? 'owner_create'
+        : 'owner_login';
+
+
+    const {
+      data,
+      error
+    } = await supabase.rpc(
+      fn,
+      {
+        p_username: u.trim(),
+        p_password: p
+      }
+    );
+
+
+    if (error || !data?.ok) {
+
+      setErr(
+        error?.message ||
+        data?.message ||
+        'Something went wrong.'
+      );
+
+    } else {
+
+      success({
+        username:
+          u.trim().toLowerCase(),
+        password: p
+      });
+
+    }
+
+    setBusy(false);
+  }
+
+
+  return (
+    <div className="backdrop">
+
+      <div className="modal auth-modal">
+
+        <div className="modal-head">
+
+          <div className="auth-title">
+
+            <img
+              src={`${import.meta.env.BASE_URL}icons/icon-192.png`}
+              alt="Dream Home"
+            />
+
+            <div>
+
+              <div className="page-kicker">
+                DREAM HOME
+              </div>
+
+              <h2>
+                {mode === 'create'
+                  ? 'Create Owner Login'
+                  : 'Owner Login'}
+              </h2>
+
+              <p>
+                {mode === 'create'
+                  ? 'Create the edit credential for your tracker.'
+                  : 'Enter the shared edit credential.'}
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <button
+            className="icon"
+            onClick={close}
+            type="button"
+          >
+            <X />
+          </button>
+
+        </div>
+
+
+        <form
+          className="form"
+          onSubmit={go}
+        >
+
+          <label>
+            Username
+
+            <input
+              value={u}
+              onChange={e =>
+                setU(e.target.value)
+              }
+              autoCapitalize="none"
+              required
+              placeholder="dreamhome"
+            />
+
+          </label>
+
+
+          <label>
+            Password
+
+            <input
+              type="password"
+              value={p}
+              onChange={e =>
+                setP(e.target.value)
+              }
+              minLength={8}
+              required
+              placeholder="At least 8 characters"
+            />
+
+          </label>
+
+
+          {err && (
+            <div className="notice">
+              {err}
+            </div>
+          )}
+
+
+          <button
+            className="primary full"
+            disabled={busy}
+            type="submit"
+          >
+            {busy
+              ? 'Please wait…'
+              : mode === 'create'
+              ? 'Create Owner Account'
+              : 'Login & Enable Editing'}
+          </button>
+
+        </form>
+
+
+        {mode === 'create' && (
+          <small className="privacy">
+            This is an app login, not your Supabase login.
+          </small>
+        )}
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   EXPENSE MODAL
+========================================================= */
+
+function ExpenseModal({
+  expense,
+  cats,
+  persons,
+  close,
+  saved,
+  ownerCred
+}) {
+  const [date, setDate] =
+    useState(
+      expense?.expense_date ||
+      new Date()
+        .toISOString()
+        .slice(0, 10)
+    );
+
+  const [title, setTitle] =
+    useState(
+      expense?.title || ''
+    );
+
+  const [cat, setCat] =
+    useState(
+      expense?.category_id ||
+      cats[0]?.id ||
+      ''
+    );
+
+  const [amount, setAmount] =
+    useState(
+      expense?.amount || ''
+    );
+
+  const [paid, setPaid] =
+    useState(
+      expense?.person_id ||
+      ''
+    );
+
+  const [notes, setNotes] =
+    useState(
+      expense?.notes || ''
+    );
+
+  const [busy, setBusy] =
+    useState(false);
+
+  const [err, setErr] =
+    useState('');
+
+
+  /* =======================================================
+     SAVE EXPENSE
+  ======================================================= */
+
   async function save(e) {
     e.preventDefault();
-    if (!ownerCred) { setErr('Owner session missing. Please login again.'); return; }
-    if (!cat) { setErr('Please select a category.'); return; }
-    setBusy(true); setErr('');
-    const args = { p_username: ownerCred.username, p_password: ownerCred.password, p_expense_date: date, p_title: title.trim(), p_category_id: cat, p_amount: Number(amount), p_paid_by: paid.trim(), p_notes: notes.trim() || null };
-    const { data, error } = await supabase.rpc(expense ? 'owner_update_expense' : 'owner_add_expense', expense ? { ...args, p_id: expense.id } : args);
-    if (error || !data?.ok) setErr(error?.message || data?.message || 'Save failed.'); else await saved();
+
+
+    if (!ownerCred) {
+      setErr(
+        'Owner session missing. Please login again.'
+      );
+      return;
+    }
+
+
+    if (!cat) {
+      setErr(
+        'Please select a category.'
+      );
+      return;
+    }
+
+
+    if (!paid) {
+      setErr(
+        'Please select who paid for this expense.'
+      );
+      return;
+    }
+
+
+    const selectedPerson =
+      persons.find(
+        p => p.id === paid
+      );
+
+
+    if (!selectedPerson) {
+      setErr(
+        'Please select a valid person.'
+      );
+      return;
+    }
+
+
+    setBusy(true);
+    setErr('');
+
+
+    const args = {
+      p_username:
+        ownerCred.username,
+
+      p_password:
+        ownerCred.password,
+
+      p_expense_date:
+        date,
+
+      p_title:
+        title.trim(),
+
+      p_category_id:
+        cat,
+
+      p_amount:
+        Number(amount),
+
+      p_paid_by:
+        selectedPerson.name,
+
+      p_notes:
+        notes.trim() || null
+    };
+
+
+    /*
+      IMPORTANT:
+
+      We pass the person's name to the existing
+      expense RPC for compatibility.
+
+      After the expense is saved, we also update
+      person_id directly so the expense is linked
+      to the selected person.
+    */
+
+
+    const {
+      data,
+      error
+    } = await supabase.rpc(
+      expense
+        ? 'owner_update_expense'
+        : 'owner_add_expense',
+
+      expense
+        ? {
+            ...args,
+            p_id: expense.id
+          }
+        : args
+    );
+
+
+    if (error || !data?.ok) {
+
+      setErr(
+        error?.message ||
+        data?.message ||
+        'Save failed.'
+      );
+
+      setBusy(false);
+      return;
+    }
+
+
+    /*
+      Find the expense ID.
+
+      Existing RPCs may return the ID in
+      different structures, so after saving
+      we reload the expense list and match
+      the newest record when necessary.
+    */
+
+    let savedExpenseId =
+      expense?.id ||
+      data?.id ||
+      data?.expense_id ||
+      data?.data?.id;
+
+
+    /*
+      If the RPC did not return an ID for a new
+      expense, find the latest matching expense.
+    */
+
+    if (!savedExpenseId) {
+
+      const {
+        data: latest
+      } = await supabase
+        .from('expenses')
+        .select('id,expense_date,title,amount')
+        .eq(
+          'expense_date',
+          date
+        )
+        .eq(
+          'title',
+          title.trim()
+        )
+        .eq(
+          'amount',
+          Number(amount)
+        )
+        .order(
+          'created_at',
+          {
+            ascending: false
+          }
+        )
+        .limit(1);
+
+      savedExpenseId =
+        latest?.[0]?.id;
+    }
+
+
+    /*
+      Link the expense to the selected person.
+
+      This is intentionally done only after
+      owner_add_expense / owner_update_expense
+      has already verified the owner credentials.
+    */
+
+    if (savedExpenseId) {
+
+      const {
+        error: linkError
+      } = await supabase
+        .from('expenses')
+        .update({
+          person_id:
+            selectedPerson.id,
+          paid_by:
+            selectedPerson.name
+        })
+        .eq(
+          'id',
+          savedExpenseId
+        );
+
+      if (linkError) {
+        setErr(
+          `Expense saved, but person link failed: ${linkError.message}`
+        );
+
+        setBusy(false);
+        return;
+      }
+    }
+
+
+    await saved();
+
     setBusy(false);
   }
-  return <div className="backdrop"><div className="modal"><div className="modal-head"><div><div className="page-kicker">DREAM HOME</div><h2>{expense ? 'Edit Expense' : 'Add Expense'}</h2><p>Record a home payment.</p></div><button className="icon" onClick={close} type="button"><X /></button></div><form className="form" onSubmit={save}><div className="grid"><label>Date<input type="date" required value={date} onChange={e => setDate(e.target.value)} /></label><label>Amount (₹)<input type="number" min="1" step=".01" required value={amount} onChange={e => setAmount(e.target.value)} /></label></div><label>Expense / Item<input required value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Cement, tiles" /></label><div className="grid"><label>Category<select value={cat} onChange={e => setCat(e.target.value)} required><option value="">Select category</option>{cats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label><label>Paid By<input required value={paid} onChange={e => setPaid(e.target.value)} placeholder="Enter person's name" /></label></div><label>Notes<textarea rows="3" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional notes" /></label>{err && <div className="notice">{err}</div>}<div className="modal-actions"><button type="button" className="secondary" onClick={close}>Cancel</button><button type="submit" className="primary" disabled={busy}>{busy ? 'Saving…' : <><Check /> Save Expense</>}</button></div></form></div></div>;
+
+
+  return (
+    <div className="backdrop">
+
+      <div className="modal">
+
+        <div className="modal-head">
+
+          <div>
+
+            <div className="page-kicker">
+              DREAM HOME
+            </div>
+
+            <h2>
+              {expense
+                ? 'Edit Expense'
+                : 'Add Expense'}
+            </h2>
+
+            <p>
+              Record a home payment.
+            </p>
+
+          </div>
+
+
+          <button
+            className="icon"
+            onClick={close}
+            type="button"
+          >
+            <X />
+          </button>
+
+        </div>
+
+
+        <form
+          className="form"
+          onSubmit={save}
+        >
+
+          <div className="grid">
+
+            <label>
+              Date
+
+              <input
+                type="date"
+                required
+                value={date}
+                onChange={e =>
+                  setDate(e.target.value)
+                }
+              />
+
+            </label>
+
+
+            <label>
+              Amount (₹)
+
+              <input
+                type="number"
+                min="1"
+                step=".01"
+                required
+                value={amount}
+                onChange={e =>
+                  setAmount(
+                    e.target.value
+                  )
+                }
+              />
+
+            </label>
+
+          </div>
+
+
+          <label>
+            Expense / Item
+
+            <input
+              required
+              value={title}
+              onChange={e =>
+                setTitle(e.target.value)
+              }
+              placeholder="e.g. Cement, tiles"
+            />
+
+          </label>
+
+
+          <div className="grid">
+
+            <label>
+              Category
+
+              <select
+                value={cat}
+                onChange={e =>
+                  setCat(e.target.value)
+                }
+                required
+              >
+
+                <option value="">
+                  Select category
+                </option>
+
+                {cats.map(c => (
+                  <option
+                    key={c.id}
+                    value={c.id}
+                  >
+                    {c.name}
+                  </option>
+                ))}
+
+              </select>
+
+            </label>
+
+
+            <label>
+              Paid By
+
+              <select
+                value={paid}
+                onChange={e =>
+                  setPaid(e.target.value)
+                }
+                required
+              >
+
+                <option value="">
+                  Select person
+                </option>
+
+                {persons.map(person => (
+                  <option
+                    key={person.id}
+                    value={person.id}
+                  >
+                    {person.name}
+                  </option>
+                ))}
+
+              </select>
+
+            </label>
+
+          </div>
+
+
+          {!persons.length && (
+            <div className="notice">
+              No persons have been added yet. Please add a person from the Persons tab before recording an expense.
+            </div>
+          )}
+
+
+          <label>
+            Notes
+
+            <textarea
+              rows="3"
+              value={notes}
+              onChange={e =>
+                setNotes(e.target.value)
+              }
+              placeholder="Optional notes"
+            />
+
+          </label>
+
+
+          {err && (
+            <div className="notice">
+              {err}
+            </div>
+          )}
+
+
+          <div className="modal-actions">
+
+            <button
+              type="button"
+              className="secondary"
+              onClick={close}
+            >
+              Cancel
+            </button>
+
+
+            <button
+              type="submit"
+              className="primary"
+              disabled={
+                busy ||
+                !persons.length
+              }
+            >
+
+              {busy
+                ? 'Saving…'
+                : (
+                  <>
+                    <Check />
+                    Save Expense
+                  </>
+                )}
+
+            </button>
+
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =========================================================
+   USERS ICON
+========================================================= */
+
+function UsersIcon({
+  size = 24
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
 }
