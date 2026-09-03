@@ -2519,7 +2519,7 @@ function OwnerModal({
               autoCapitalize="none"
               autoCorrect="off"
               required
-              placeholder="dreamhome"
+              placeholder="Enter username"
             />
           </label>
 
@@ -2536,7 +2536,7 @@ function OwnerModal({
               }
               minLength={8}
               required
-              placeholder="At least 8 characters"
+              placeholder="Enter password"
             />
           </label>
 
