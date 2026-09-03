@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="160" viewBox="0 0 640 160" fill="none">
+  <rect x="4" y="4" width="152" height="152" rx="42" fill="#17233B"/>
+  <path d="M34 75 80 32l46 43v51H34V75Z" stroke="#fff" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M55 93v33M105 93v33" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+  <path d="M80 62v45M67 72h25c7 0 11 4 11 9s-4 9-11 9H70c-7 0-11 4-11 9s4 9 11 9h29" stroke="#4B7BFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="80" cy="88" r="4" fill="#4B7BFF"/>
+  <text x="180" y="78" fill="#17233B" font-family="Inter,Arial,sans-serif" font-size="42" font-weight="800" letter-spacing="2">DREAM HOME</text>
+  <text x="182" y="111" fill="#7D8797" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="3">FAMILY FINANCES</text>
+</svg>
