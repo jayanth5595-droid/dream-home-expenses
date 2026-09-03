@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 160">
+  <rect width="620" height="160" rx="34" fill="#0F1D36"/>
+  <g transform="translate(24 20)">
+    <path d="M14 64 58 24l44 40v53H14z" fill="#fff"/>
+    <path d="M8 66 58 18l50 48" fill="none" stroke="#4F7CFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M36 117V80h44v37" fill="#0F1D36"/>
+    <circle cx="58" cy="66" r="21" fill="#2563EB" stroke="#fff" stroke-width="5"/>
+    <text x="58" y="75" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#fff">₹</text>
+  </g>
+  <text x="155" y="75" font-family="Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="1" fill="#fff">DREAM HOME</text>
+  <text x="156" y="108" font-family="Arial, sans-serif" font-size="18" font-weight="500" letter-spacing=".8" fill="#A9B6CC">Family Finances</text>
+</svg>
