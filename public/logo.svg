@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1000 260"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">Dream Home — Family Expense Tracker</title>
+  <desc id="desc">A gold house and rupee symbol with Dream Home branding.</desc>
+
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFD95A"/>
+      <stop offset="45%" stop-color="#E8A817"/>
+      <stop offset="100%" stop-color="#B87900"/>
+    </linearGradient>
+    <linearGradient id="goldSoft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#B87900"/>
+      <stop offset="48%" stop-color="#FFD95A"/>
+      <stop offset="100%" stop-color="#B87900"/>
+    </linearGradient>
+  </defs>
+
+  <!--
+    BRAND MARK
+    Move the complete mark by changing the transform below.
+  -->
+  <g id="brand-mark" transform="translate(18 14)">
+    <!-- roof -->
+    <path d="M22 108 L116 28 Q126 19 136 28 L230 108"
+          fill="none" stroke="url(#gold)" stroke-width="20"
+          stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- house side pillars -->
+    <path d="M67 92 L67 184" fill="none" stroke="url(#gold)"
+          stroke-width="12" stroke-linecap="butt"/>
+    <path d="M205 92 L205 184" fill="none" stroke="url(#gold)"
+          stroke-width="12" stroke-linecap="butt"/>
+
+    <!-- window -->
+    <g fill="url(#gold)">
+      <rect x="112" y="55" width="19" height="19" rx="1"/>
+      <rect x="137" y="55" width="19" height="19" rx="1"/>
+      <rect x="112" y="80" width="19" height="19" rx="1"/>
+      <rect x="137" y="80" width="19" height="19" rx="1"/>
+    </g>
+
+    <!-- rupee -->
+    <text x="135" y="150"
+          text-anchor="middle"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="103"
+          font-weight="800"
+          fill="url(#gold)">₹</text>
+
+    <!-- foundation arc -->
+    <path d="M30 197 Q135 157 240 197"
+          fill="none" stroke="url(#goldSoft)" stroke-width="12"
+          stroke-linecap="round"/>
+  </g>
+
+  <!--
+    BRAND TEXT
+    The text is deliberately separate from the mark so its position can
+    easily be changed independently. Change translate(270 0) to move it.
+  -->
+  <g id="brand-text" transform="translate(270 0)">
+    <text x="0" y="126"
+          font-family="Georgia, 'Times New Roman', serif"
+          font-size="77"
+          font-weight="700"
+          letter-spacing="2"
+          fill="#10264D">DREAM HOME</text>
+
+    <text x="4" y="174"
+          font-family="Arial, Helvetica, sans-serif"
+          font-size="25"
+          font-weight="700"
+          letter-spacing="6"
+          fill="#53657D">FAMILY EXPENSE TRACKER</text>
+  </g>
+</svg>
