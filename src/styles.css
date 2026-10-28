@@ -1,0 +1,112 @@
+/* Dream Home — Advance / Loan Fund section refinement
+   Append this block to the END of src/styles.css. */
+.advance-main-block {
+  display:flex; align-items:center; justify-content:space-between; gap:24px;
+  padding:25px 28px; margin:0 0 20px; border:1px solid #cfe4d4; border-radius:22px;
+  background:radial-gradient(circle at 90% 15%,rgba(207,239,213,.7),transparent 28%),linear-gradient(135deg,#fff 0%,#f1f9f1 100%);
+  box-shadow:0 10px 30px rgba(30,91,57,.07);
+}
+.advance-main-left { min-width:0; display:flex; align-items:center; gap:16px; }
+.advance-main-icon { width:56px;height:56px;flex:0 0 56px;display:grid;place-items:center;border-radius:17px;color:#fff;background:linear-gradient(145deg,#11664e,#29956c);box-shadow:0 8px 20px rgba(24,122,95,.2); }
+.advance-main-label { display:block;color:#598274;font-size:10px;font-weight:900;letter-spacing:.17em; }
+.advance-main-left strong { display:block;margin-top:4px;color:#115744;font-size:clamp(26px,3vw,37px);letter-spacing:-.045em;line-height:1.1; }
+.advance-main-left p { margin:6px 0 0;color:#71877e;font-size:11px; }
+.advance-main-stats { display:flex;align-items:stretch;gap:0; }
+.advance-main-stats > div { min-width:86px;padding:3px 18px;border-left:1px solid #d7e7da;text-align:center; }
+.advance-main-stats b { display:block;color:#175b47;font-size:23px;letter-spacing:-.03em; }
+.advance-main-stats small { display:block;margin-top:3px;color:#779086;font-size:10px; }
+.advance-balance-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-bottom:20px;align-items:start; }
+.card.advance-fund-card { min-width:0;padding:21px;border:1px solid #d7e8da;border-radius:20px;background:linear-gradient(155deg,#fff 0%,#fbfefb 100%);box-shadow:0 8px 24px rgba(32,78,54,.06); }
+.advance-fund-card .card-title { padding-bottom:14px;margin-bottom:15px; }
+.advance-fund-card .card-title b { font-size:15px; }
+.advance-fund-card .card-title small { font-size:10px; }
+.fund-topline { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px; }
+.fund-topline > div { min-width:0;padding:12px 13px;border:1px solid #e0eee2;border-radius:13px;background:#f6fbf6; }
+.fund-topline small { display:block;color:#789187;font-size:9px;font-weight:850;letter-spacing:.11em; }
+.fund-topline strong { display:block;margin-top:5px;color:#145b47;font-size:20px;letter-spacing:-.03em;overflow-wrap:anywhere; }
+.fund-progress { height:6px;overflow:hidden;margin-bottom:17px;border-radius:999px;background:#e7f0e8; }
+.fund-progress span { display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#19805c,#72bd7d); }
+.fund-person-line { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid #edf3ed;font-size:11px; }
+.fund-person-line span { color:#7b9187; }
+.fund-person-line b { color:#205b48;text-align:right; }
+.fund-holder-title,.fund-history-title { margin:17px 0 8px;color:#658277;font-size:9px;font-weight:900;letter-spacing:.13em;text-transform:uppercase; }
+.fund-holder-row { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;margin-top:6px;border:1px solid #e7f0e8;border-radius:10px;background:#f9fcf9;font-size:11px; }
+.fund-holder-row span { color:#557368; }
+.fund-holder-row b { color:#145b47;font-size:12px; }
+.empty.compact { padding:11px 5px;font-size:10px; }
+.fund-history { display:grid;gap:0;max-height:230px;overflow:auto;border:1px solid #e6efe7;border-radius:12px;background:#fff; }
+.fund-history-row { display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px;padding:10px 11px;border-bottom:1px solid #edf3ee; }
+.fund-history-row:last-child { border-bottom:0; }
+.fund-history-row > div { min-width:0; }
+.fund-history-row > div b { display:block;overflow-wrap:anywhere;color:#315d4d;font-size:10px; }
+.fund-history-row > div small { display:block;margin-top:4px;color:#84988e;font-size:9px; }
+.fund-history-row > strong { color:#175b47;font-size:11px;white-space:nowrap; }
+.fund-actions { display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:15px;padding-top:13px;border-top:1px solid #e9f1ea; }
+.fund-actions .secondary.small { min-height:34px;gap:6px;padding:0 10px;font-size:10px; }
+.fund-actions .secondary.small:has(+ .icon.danger) { flex:0 0 auto; }
+.fund-actions .icon.danger { margin-left:auto; }
+.fund-actions button { white-space:nowrap; }
+.advance-ledger-list { display:grid; }
+.advance-ledger-row { display:grid;grid-template-columns:40px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid #edf3ee; }
+.advance-ledger-row:last-child { border-bottom:0; }
+.ledger-icon { width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:#197255;background:#eaf6eb; }
+.ledger-advance-expense { color:#a86d19;background:#fff5df; }
+.ledger-advance-transfer { color:#386d9a;background:#eaf3fb; }
+.ledger-advance-return { color:#177353;background:#e5f5e8; }
+.ledger-main { min-width:0; }
+.ledger-main b { display:block;color:#275b49;font-size:11px;overflow-wrap:anywhere; }
+.ledger-main span { display:block;margin-top:4px;color:#81958b;font-size:9px;line-height:1.45;overflow-wrap:anywhere; }
+.advance-ledger-row > strong { color:#145b47;font-size:12px;white-space:nowrap; }
+.ledger-actions { display:inline-flex;align-items:center;gap:2px; }
+.empty-state-advance { padding:28px 14px;text-align:center; }
+.advance-empty-icon { width:52px;height:52px;display:grid;place-items:center;margin:0 auto 12px;border-radius:16px;color:#167153;background:#e8f5e9; }
+.empty-state-advance > b { display:block;color:#205b48;font-size:13px; }
+.empty-state-advance p { max-width:380px;margin:6px auto 15px;color:#7c9187;font-size:10px;line-height:1.5; }
+.advance-summary-top { display:flex;align-items:center;gap:12px;padding:14px;margin-bottom:16px;border:1px solid #dcecdf;border-radius:14px;background:#f4faf4; }
+.advance-summary-top > span { width:38px;height:38px;display:grid;place-items:center;border-radius:12px;color:#fff;background:#19805c; }
+.advance-summary-top small { display:block;color:#779085;font-size:9px;font-weight:850;letter-spacing:.12em; }
+.advance-summary-top strong { display:block;margin-top:3px;color:#145b47;font-size:23px; }
+.advance-summary-list { display:grid;gap:14px; }
+.advance-summary-row { display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:8px 10px; }
+.advance-summary-row > div:first-child { display:flex;align-items:center;gap:8px;min-width:0; }
+.advance-summary-row > div:first-child b { overflow:hidden;color:#426858;font-size:10px;text-overflow:ellipsis;white-space:nowrap; }
+.advance-summary-row > strong { color:#145b47;font-size:11px;white-space:nowrap; }
+.advance-summary-row > em { color:#8ba095;font-size:9px;font-style:normal; }
+.advance-summary-track { grid-column:1/-1;height:5px;overflow:hidden;border-radius:999px;background:#eaf1eb; }
+.advance-summary-track span { display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#19805c,#73bb7d); }
+.advance-modal { border-radius:22px; }
+.advance-modal .modal-head { padding-bottom:14px;border-bottom:1px solid #e5efe6; }
+.advance-modal .modal-head h2 { color:#145744; }
+.advance-modal .field-help { color:#7e9389;font-size:9px;font-weight:500;line-height:1.4; }
+.advance-modal .modal-actions { display:flex;justify-content:flex-end;gap:9px;padding-top:7px; }
+.advance-modal .notice { margin:0; }
+
+@media (max-width:900px) {
+  .advance-main-block { align-items:flex-start;flex-direction:column;gap:17px;padding:21px; }
+  .advance-main-stats { width:100%; }
+  .advance-main-stats > div { flex:1;min-width:0;padding:3px 8px; }
+  .advance-main-stats > div:first-child { border-left:0; }
+  .advance-balance-grid { grid-template-columns:1fr; }
+}
+@media (max-width:600px) {
+  .advance-main-block { padding:17px;border-radius:17px; }
+  .advance-main-left { align-items:flex-start;gap:11px; }
+  .advance-main-icon { width:45px;height:45px;flex-basis:45px;border-radius:13px; }
+  .advance-main-left strong { font-size:29px; }
+  .advance-main-stats b { font-size:19px; }
+  .advance-main-stats small { font-size:9px; }
+  .card.advance-fund-card { padding:15px;border-radius:16px; }
+  .fund-topline strong { font-size:17px; }
+  .fund-actions { gap:6px; }
+  .fund-actions .secondary.small { flex:1 1 auto;min-width:0;padding:0 8px;font-size:9px; }
+  .fund-actions .icon.danger { margin-left:0; }
+  .fund-history-row { grid-template-columns:minmax(0,1fr) auto;gap:6px; }
+  .fund-history-row .ledger-actions { grid-column:1/-1;justify-self:end; }
+  .advance-ledger-row { grid-template-columns:34px minmax(0,1fr) auto;gap:9px;padding:11px 0; }
+  .ledger-icon { width:33px;height:33px;border-radius:10px; }
+  .advance-ledger-row .ledger-actions { grid-column:2/-1;justify-self:end; }
+  .advance-ledger-row > strong { font-size:11px; }
+  .advance-summary-row { gap:7px; }
+  .advance-modal .modal-actions { flex-wrap:wrap; }
+  .advance-modal .modal-actions button { flex:1; }
+}
